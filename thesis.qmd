@@ -1,79 +1,45 @@
-# Úvod
-
-Úvod je tady.
-
-Ukázková stránka:
-
-\lipsum[2]
-
-Citace vypadají takto [@Willimetz2025] a odkazy na objekty jako například @fig-priklad, @tbl-priklad nebo @eq-priklad. Pro přidání odkazů přidejte BibTeX záznamy do souboru `reference.bib`.
-
-Pro zápis chemických vzorců použijte LaTeX příkaz `\ce`, například \ce{H2SO4}.
-
-![Ukázkový obrázek](figures/example.png){#fig-priklad width="30%"}
-
-Ukázková rovnice:
-
-$$
-c^2 = a^2 + b^2
-$$ {#eq-priklad}
-
-Ukázková tabulka:
-
-|   A |   B |
-|----:|----:|
-|   1 |   4 |
-|   2 |   5 |
-|   3 |   6 |
-
-: Ukázkový popis {#tbl-priklad}
+# Introduction
 
 # Background
 
 ## Topology in geography
 
-Topology is a field of mathematics which “studies properties of spaces that are invariant to continuous deformation” @waterloo_topology. It takes into account relationships between objects rather than their shape or magnitude. The discipline was formalized at the beginning of 20th century, however, its roots go back to Euler's solution on Bridges of Konigsberg problem @euler1741solutio. The objective is to cross every bridge exactly once and return to the starting point. He abstracted the problem, as he represented the 4 landmasses as nodes and the 7 bridges as edges. In doing so, he laid the foundations for graph theory (see Chapter. xx), as he used a graph to represent topological relationships.
+Topology is a mathematical discipline that “studies properties of spaces that are invariant to continuous deformation” (@waterloo_topology). In geographic context, it means focusing strictly on the spatial relationships between features, such as connectivity, adjacency, and containment (citace), rather than their absolute geometric shape, distance, or magnitude. The discipline was formally established in the early 20th century, however its roots trace back to Leonhard Euler’s solution to the Seven Bridges of Königsberg problem (@euler1741solutio). The objective of the problem was to cross every bridge in the city exactly once and return to the starting point. The physical distances and exact shapes of the landmasses were entirely irrelevant to the solution, the outcome depended solely on knowing which bridges connected which landmasses. By abstracting the city into a graph (see definition in chap. xx) while preserving the information about the connectivity of the landmasses, he was able to solve the problem.
 
-![Bridges of Konigsberg (a) and their graph representation (b).](figures/konigsberg.png){#fig-konigsberg fig-align="center" width="80%"}
+-fig konigsberg bridges a graph
 
-Topology in geographical context, geospatial topology or geotopology, refers to spatial relationships between geometries. The formal study of these relationships is rooted in point-set topology, also known as general topology, as it is the foundation to many other related disciplines. It relies on the concepts set theory, introduced by Georg Cantor (?), like set operations (e. g. intersection, union, complement), as well as the fundamental notions of subsets, open sets, and neighborhoods. @hausdorff1914grundzuge formalized topological space (see @def-topological-space) in his book on set theory, introducing the foundations of point-set topology.
+Probably one the most important connections between topology and geography is the Four Colour Theorem, proposed by Francis Guthrie 1852. It states that any planar map consisting of polygons can be coloured using only four colours without any pair of neigbouring polygons sharing the same colour. The theorem was proven more than a hundred years later by @appel1977fourcolor1 and it relied entirely on topological principles, specifically, polygonal adjacency. Similarly to the Königsberg bridges, solving the problem required abstraction into a graph, a mathematical structure frequently used to describe spatial and topological relationships.
 
-::: {#def-topological-space style="border: 1px solid #333; padding: 1em;"}
-## Topological space
+The formal study topological relationships is rooted in point-set topology, also known as general topology, as it is the foundation to many other related disciplines. It relies on the concepts set theory, introduced by @cantor1874, like set operations (e. g. intersection, union, complement), as well as the fundamental notions of subsets, open sets, and neighborhoods. @hausdorff1914grundzuge formalized topological space in his book on set theory, introducing the foundations of point-set topology.
 
 A topological space is a pair $(X, \tau)$, where $X$ is a set of points and $\tau$ is a collection of subsets of $X$ (the topology). $\tau$ must satisfy the following axioms:
 
 1.  Any union of elements of $\tau$ belongs to $\tau$.
 2.  Any finite intersection of elements of $\tau$ belongs to $\tau$.
 3.  $X$ and $\emptyset$ belong to $\tau$.
-:::
 
-Based on the definition of topological space, Hausdorff formally defined the interior, boundary and exterior of a set. These three topological properties are the core of topological models used in spatial analysis.
+Based on the definition of topological space, @hausdorff1914grundzuge formally defined the interior, boundary and exterior of a set. These three topological properties are the core of topological models used in spatial analysis. Given a set $Y$ in topological space $(X, tau)$:
 
-::: {#def-topo_parts}
-## Interior, boundary, exterior
-
-Given a set Y in topological space (X, tau):
-
--   interior
+-   interior (doplnim)
 -   boundary
 -   exterior
-:::
 
-Identifying these relationships is essential in numerous geographical disciplines, such as landscape ecology, hydrology, geography of transport, cartography and spatial statistics (@papadimitriou_geo-topology_2023).
+-Identifying these relationships is essential in numerous geographical disciplines, such as landscape ecology, hydrology, geography of transport, cartography and spatial statistics (@papadimitriou_geo-topology_2023).
+
+<!--This phenomena is used across other fields. Among the most notable applications of graphs on topological relationships, Kirchhoff (1847) represented an electrical circuit as a graph, implicitly using tree structures (see chapter xx) to identify independent circuit equations. A tree in the context of graph theory was later formalized by Cayley (1857), who used graphs to represent chemical structures. -->
 
 ### Topological models
 
-During the 1980s, terms for spatial relations were mentioned in literature, however, they lacked formal definitions and were mostly treated as axiomatic (@egenhoferPointsetTopologicalSpatial1991). The first rigorous framework for topological relationships was the 4-Intersection Model (4-IM) developed by @egenhoferPointsetTopologicalSpatial1991. It applied interior and boundary definitions from point set topology to a geospatial context. The 4-IM served as the predecessor to the Dimensionally Extended 9-Intersection Model (DE9-IM) (@clementiniSmallSetFormal1993), which is now the standard adopted by the Open Geospatial Consorcium (OGC). Expanding the 4-IM, it is based on a 3×3 matrix of all possible intersections between interior, boundary and exterior of two geometries (point, line or polygon) and further describes the dimension of those intersections:
+During the 1980s, terms for spatial relations were mentioned in literature, however, they lacked formal definitions and were mostly treated as axiomatic (@egenhoferPointsetTopologicalSpatial1991). The first rigorous framework for topological relationships was the *4-Intersection Model* (*4-IM*) developed by @egenhoferPointsetTopologicalSpatial1991. It applied interior and boundary definitions from point set topology to a geospatial context. The *4-IM* served as the predecessor to the *Dimensionally Extended 9-Intersection Model* (*DE9-IM*) (@clementiniSmallSetFormal1993), which is now the standard adopted by the *Open Geospatial Consorcium* (*OGC*). Expanding the *4-IM*, it is based on a 3×3 matrix of all possible intersections between interior, boundary and exterior of two geometries (point, line or polygon) and further describes the dimension of those intersections:
 
 -   False (-1) if there is no intersection,
 -   0 if the intersection is a point,
 -   1 if the intersection is a line,
 -   2 if the intersection is a polygon.
 
-![DE-9IM matrix.](figures/de9im3.jpg){#fig-de9im fig-align="center" width="80%"}
+-tab de9im matrix, nebo fig?
 
-In most use cases, non-empty intersections (0,1 or 2) can be universally treated as True when the result is invariant to the intersection dimension, however, for defining contiguities the dimension of the intersection is required (see chapt. xx). Specific value combinations in the matrix have standard names, which are referred to as spatial predicates. The C++ library GEOS - a core dependency of many libraries (e. g. Shapely, Geopandas), databases (e. g. PostGIS), and applications (e. g. QGIS) - recognizes 9 spatial predicates (see tab @tab-spatial_predicates) @geos. For computational purposes, the matrix is often flattened into a 9-character DE-9IM string. <!--- ogc ma actually jen 8 predicates (excludes covers, je to postgis extention), pak mozna zminit relate a reverse funkce jako covered by nebo contains properly --->
+In most use cases, non-empty intersections (0, 1 or 2) can be universally treated as $True$ when the result is invariant to the intersection dimension. However, for defining contiguities the dimension of the intersection is required (see chapt. xx). Specific value combinations in the matrix have standard names, which are referred to as spatial predicates. The *C++* library *GEOS* - a core dependency of many libraries (e. g. *Shapely*, *Geopandas*), databases (e. g. *PostGIS*), and applications (e. g. *QGIS*) - recognizes 9 spatial predicates (see tab @tab-spatial_predicates) @geos. For computational purposes, the matrix is often flattened into a 9-character DE-9IM string.
 
 +-------------------+-------------------+-------------+----------------------------------------+
 | Spatial predicate | DE-9IM string     | Description | Illustration?                          |
@@ -100,62 +66,85 @@ In most use cases, non-empty intersections (0,1 or 2) can be universally treated
 | Covers            | ??                |             |                                        |
 +-------------------+-------------------+-------------+----------------------------------------+
 
-: Spatial predicates.
+: Spatial predicates. - tohle taky dopnim
 
-bridge na topological validity?
+Software libraries implement these predicates alongside additional ones as boolean functions, such as modified formulations (e. g. `contains_properly` in *Shapely* library) or inverse relationships (e. g. `covered_by` in *Shapely*). Custom spatial queries can be formalized by defining the flattened DE9-IM string (e. g. `relate` in *Shapely*, `ST_relate` in *PostGIS*). Topological relationships derived from *DE-9IM* are the underlying framework for many spatial operations including overlay analysis, contiguity detection, and topology validation.
 
 ## Topological validity and polygonal coverage
 
-Spatial data often consists of errors due to positional accuracy, digitizing error, geometry simplification, age of the data @gisgeography_topology, editing operations or integration of different datasets @spatialeye_topology.
+Spatial data often suffers from errors from a variety of sources. These inaccuracies are typically introduced during manual vectorization or data entry, data transfer, geometric editing operations (such as simplification or reprojection), or the integration of heterogeneous datasets of varying ages (@spatialeye_topology, @gisgeography_topology, @servigne2000).
 
-## Contiguity
+@servigne2000 categorizes spatial consistency errors into three primary types:
 
-In 1852, Francis Guthrie introduced the Four Colour Problem. It asks whether a map in a plane can be coloured by no more than four colours without two neighbouring regions sharing the same colour. This was one of the foundational topological problems in geography as it only requires the information about the polygon neighbourhoods - contiguity. This concept is essential in many spatial analysis tools, including spatial autocorrelation and regionalization (see chapters xx).
+-   Structural errors: Arising when the chosen data structure cannot adequately accommodate the data model.
+-   Geometric errors: Conceptually invalid geometry (e. g. self-intersecting polygons).
+-   Topo-semantic errors: Occurring when the geometric representation violates real-world logical constraints (e.g., a single building footprint incorrectly intersecting two distinct parcels).
 
-![Four colour theorem.](figures/fourcolor.png){#fig-4color fig-align="center" width="80%"}
+Geometric and topo-semantic errors are particularly problematic when detecting topological relationships, as they are not immediately noticable. The most commonly used data structures in modern GIS are "spaghetti" models (e.g., GeoJSON, Shapefile, Parquet, and GeoPackage). These models store each geometry as an isolated record with no information about their mutual relationships, therefore they need to be derived from the geometry (vertices). In presence of geometrical inaccuracies, accurate detection of topological relationships is impossible.
 
-Contiguity refers to boundary connectedness @esri_contiguity. It is a formal way of defining polygon neigbourhood. Boundary connectedness is rather an unprecise... , therefore there are 3 main types of contiguity: Queen, Rook and Bishop, named by chess characters based on their ability to move across a chessboard.
+According to @ubedaTopologicalErrorCorrecting1997a, the topology error correction process consists of three steps: definition, checking, and correction. Definitions of the errors is esentially establishing the spatial constraints input data must satisfy. These user-defined constraints are derived from formal spatial predicates. Many of these rules are explicitely implemented as ready-to-use topology checkers in desktop GIS software like *QGIS* and *ArcGIS Pro* (e. g. `must not have dangles` for line features, `must not overlap` for line or polygonal features).
 
-When using Queen contiguity to define polygon neighbourhoods, two polygons are adjacent if their boundaries share at least one point. This relationship is identical to the “touches” spatial predicate (see Chap. xx). Rook contiguity is stricter - boundaries of two polygons must share a line. The not so commonly used contiguity, Bishop, identifies two polygons as adjacent only if their boundaries share a point, but not when they share a line. These contiguities can be rigorously defined through DE-9IM matrices or strings (see Tab. xx).
+Valid polygonal coverage requires specific set of topological constraints, which it must satisfy @jtsLinearThinkingPolygonal2022:
 
-| Contiguity | DE-9IM string    | Col3 |
-|------------|------------------|------|
-| Queen      |                  |      |
-| Rook       | F\*\*\*1\*\*\*\* |      |
-| Bishop     |                  |      |
+-   polygon interiors must not overlap (no slivers),
+-   a shared boundary between polygons must have the same set of vertices (no gaps).
 
-Contiguity alongside with its derivatives (e. g. 2nd order Queen contiguity including neigbours of neighbours) is not the only way how to define
+-geoplanar also mentions non-planar edges/touches.. planar enforcement
 
-Fuzzy contiguity
+-If these constraints are violated, the logical contiguity between polygons is compromised. Enforcing valid polygonal coverage ensures accurate spatial analysis and improves cartographic visualization.
 
-tady bude diagram pro premka
+-fig topology errors slivers, gaps
 
-Spatial graph
+Various software tools can evaluate the datasets for topology violations. *Shapely*, python wrapper for the *GEOS* library, implements functions for checking individual geometric validity rather than global topology. *JTS Topology Suite* (*JTS*), an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like *QGIS* and *ArcGIS Pro* evaluate the selected topology rules (i. e. for polygonal coverage `must not overlap` and `must not have gaps`) and visually highlight every error on the map.
 
-A graph is defined as an ordered pair G = (V,E), where V is a set of nodes and E is a set of edges representing connectivity between nodes. A node v V is incident to an edge e E if v is an endpoint of that edge. Two nodes i, j V are adjacent if there exists an edge {i, j} E connecting them. A graph can either be undirected, where edges have no orientation and {i,j} = {j,i}, or directed, where each edge can be assigned a direction (one-way or both), therefore (i,j) (j,i).
+While *JTS*, *QGIS*, and *ArcGIS* Pro validate topology by checking individual geometries, Mapshaper temporarily converts the spaghetti model into an explicit topological data structure. Instead of storing independent geometries in rows, Mapshaper decomposes a polygonal dataset into an arc-node graph: creating edges (arcs) for boundaries and nodes where three or more polygons intersect. Polygons are then defined mathematically through sequences of these shared arcs, eliminating coordinate redundancy. In this explicit topological structure, the information detailing which polygons neighbor each other is inherently stored within the data model itself.
 
-Euler in his Konigsberg bridges solution relied on the concept of a node degree - the number of edges incident to a given node, observing that the problem has a solution only if all the nodes (landmasses) have an even degree (are connected by an even number of bridges).
+-Fixing errors can be either done (semi)automatically or by hand, involving a snapping treshold... a zapomnela jsem na geoplanar :(
 
-Among the most notable applications of graphs on topological relationships, Kirchhoff (1847) represented an electrical circuit as a graph, implicitly using tree structures (see chapter xx) to identify independent circuit equations. A tree in the context of graph theory was later formalized by Cayley (1857), who used graphs to represent chemical structures. However, it is important to note that not all topological relationships can be represented as graphs and that not all graphs represent topological relationships.
+-even though such tools exist, topological errors still occur, a presne proto pisu tuhle praci
 
-### Spatial weight matrix
+## Spatial weights and contiguity
 
-# Výsledky
+Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity). Each pair of observations is assigned a weight, which can either be boolean (1 for relevance, 0 otherwise), or specific numerical value (e. g. inverse distance, hybrid weights). These spatial weights are usually stored in either spatial weights matrix or spatial weights graph, which will be explained in this chapter. Afterwards, we will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
 
-Výsledky jsou tady.
+Spatial weight matrix, denoted as $W$, is one of structures used in the computation of spatial statistics. $W$ is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ represents weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal (@rey2022PySAL), geoda (@anselin2006GeoDa) or spdep (@spdep) also implement sparse matrix, which stores only non-zero elements.
 
-## Podkapitola
+<!--- W often has to be row-standartized. That is dividing each row by its sum so that sum of every row equals exactly 1  --->
 
-Text podkapitoly je tady.
+Another structure used to store spatial weights is spatial weights graph. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents a polygon and a weighted edge denotes the relationship between observations.
 
-### Podpodkapitola
+-fig nejaky data, jejich spatial weight matrix, jejich graph
 
-Text podpodkapitoly je tady.
+Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary), the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012).
 
-# Diskuze
+<!--- A graph can either be undirected, where edges have no orientation and $\{i,j\} = \{j,i\}$, or directed, where each edge can be assigned a direction (one-way or both), therefore $(i,j) \neq (j,i)$. --->
 
-Diskuze je tady.
+### Contiguity
 
-# Závěr
+Spatial objects that share a common border are considered to be contiguous. However, "sharing a common border" isn't a rigorous definition, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces: *Rook*, *Queen*, and *Bishop*.
 
-Závěr je tady.
+For a pair of polygons to be considered *Rook* neighbours, the polygons must share an edge (a boundary of non-zero length). *Queen* contiguity is less strict - the polygons are considered neighbours if they share at least one point (vertex or a shared edge). *Queen* contiguity corresponds to the standard Touches spatial predicate. Bishop contiguity, rarely used on its own but occasionally a component of hybrid weights (@shortridgePracticalLimitsMorans2007), is strictly defined as polygons sharing only a point, but no edges. Therefore, it represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook*). All of these relationships can be formally expressed using the *DE-9IM* strings, as illustrated in Figure XX. Furthermore, these base definitions can be expanded into higher-order contiguity weights (neighbours of neigbours) to model relationships beyond immediate neighbours.
+
+-fig 3 contiguity ilustrace s de9im stringy
+
+-nonplanar enforced edges/touches geoplanar
+
+-In geographical analysis, Rook or Queen contiguity is usually the standard. There is no concensus, which matrices use when, it is mostly experimental as it depends on the character of the data, but it impacts the outcome of the statistic.. nejaka hlubsi resers na specfication of weight matrix?
+
+-Fuzzy contiguity
+
+-tady bude diagram pro premka
+
+<!---Euler in his Konigsberg bridges solution relied on the concept of a node degree - the number of edges incident to a given node, observing that the problem has a solution only if all the nodes (landmasses) have an even degree (are connected by an even number of bridges). --->
+
+## Spatial autocorrelation
+
+### Moran's I
+
+### Geary's C
+
+## Regionalization
+
+### Agglomerative clustering
+
+### SKATER
