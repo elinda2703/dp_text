@@ -105,17 +105,17 @@ While *JTS*, *QGIS*, and *ArcGIS* Pro validate topology by checking individual g
 
 ## Spatial weights and contiguity
 
-Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity). Each pair of observations is assigned a weight, which can either be boolean (1 for relevance, 0 otherwise), or specific numerical value (e. g. inverse distance, hybrid weights). These spatial weights are usually stored in either spatial weights matrix or spatial weights graph, which will be explained in this chapter. Afterwards, we will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
+Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity). Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance, hybrid weights). These spatial weights are usually stored in either spatial weights matrix or spatial weights graph, which will be explained in this chapter. Afterwards, we will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
 
 Spatial weight matrix, denoted as $W$, is one of structures used in the computation of spatial statistics. $W$ is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ represents weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal (@rey2022PySAL), geoda (@anselin2006GeoDa) or spdep (@spdep) also implement sparse matrix, which stores only non-zero elements.
 
 <!--- W often has to be row-standartized. That is dividing each row by its sum so that sum of every row equals exactly 1  --->
 
-Another structure used to store spatial weights is spatial weights graph. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents a polygon and a weighted edge denotes the relationship between observations.
+Another structure used to store spatial weights is spatial weights graph. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations.
 
 -fig nejaky data, jejich spatial weight matrix, jejich graph
 
-Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary), the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012).
+Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary) and other spatial statistics, the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012).
 
 <!--- A graph can either be undirected, where edges have no orientation and $\{i,j\} = \{j,i\}$, or directed, where each edge can be assigned a direction (one-way or both), therefore $(i,j) \neq (j,i)$. --->
 
@@ -128,6 +128,8 @@ For a pair of polygons to be considered *Rook* neighbours, the polygons must sha
 -fig 3 contiguity ilustrace s de9im stringy
 
 -nonplanar enforced edges/touches geoplanar
+
+-nejaky deeper popis contigutiy matrix? symetričnost, row standartization?
 
 -In geographical analysis, Rook or Queen contiguity is usually the standard. There is no concensus, which matrices use when, it is mostly experimental as it depends on the character of the data, but it impacts the outcome of the statistic.. nejaka hlubsi resers na specfication of weight matrix?
 
