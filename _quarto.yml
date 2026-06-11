@@ -15,7 +15,7 @@ thesis:
   logo_height: "8cm"
   title_en: "Název práce (v AJ)"
   thesis_type: "Bakalářská práce - Diplomová práce - Rigorózní práce - Disertační práce - Závěrečná práce v programu celoživotního vzdělávání"
-  supervisor: "Školitel"
+  supervisor: "Jméno školitele"
   place: "Praha"
   signature: "Autor"
   declaration: "Prohlášení"
@@ -37,7 +37,7 @@ format:
     keep-tex: false
     lang: en
     cite-method: natbib
-    biblio-style: achemso
+    biblio-style: apalike
     citecolor: black
     linkcolor: black
     urlcolor: black
@@ -45,7 +45,6 @@ format:
     number-sections: true
     template: tex/template.tex
     include-in-header: tex/preamble.tex
-    include-after-body: tex/after-body.tex
     fig-align: center
     fig-cap-location: bottom
     tbl-cap-location: top
@@ -54,6 +53,7 @@ format:
       - right=2.5cm
       - top=2.5cm
       - bottom=2.5cm
+  docx: default
 
 execute:
   echo: false

@@ -2,6 +2,184 @@
 
 # Background
 
+## Spatial statistics
+
+<!--- The first appearance of formalizing spatial autocorrelation formula goes to @moran1950 known as Moran's I, most widely known spatial autocorrelation indicator. The next one was Geary with his Geary C. Spatial autocorrelation was popularized by the seminal work of cliff and ord, alongside spatial weight matrices, which are a part of spatial autocorrelation formulas. SAC is important part of analysis in many fields including physical geography, health sciences and epidemiology, criminology, segregation, political geogrphy and spatial econometrics among others. -->
+
+### Spatial weights
+
+Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity). Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance) among others. Afterwards, we will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
+
+Spatial weights can be represented as a matrix, denoted as $W$. $W$ is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ corresponds to the weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal [@rey2022PySAL], geoda [@anselin2006GeoDa] or spdep [@spdep] also implement sparse matrix, which stores only non-zero elements.
+
+Spatial weight matrix can be understood as a graph adjacency matrix, therefore spatial graph is another representation of spatial weights. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations. Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph.
+
+-fig nejaky data, jejich spatial weight matrix, jejich graph
+
+-neco o symetricnosti?
+
+<!--- Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary) and other spatial statistics, the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012). --->
+
+#### Contiguity
+
+Spatial objects that share a common border are considered to be contiguous. However, "sharing a common border" isn't a rigorous definition, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces: *Rook*, *Queen*, and *Bishop*.
+
+For a pair of polygons to be considered *Rook* neighbours, the polygons must share an edge (a boundary of non-zero length). *Queen* contiguity is less strict - the polygons are considered neighbours if they share at least one point (vertex or a shared edge). Bishop contiguity, rarely used on its own is strictly defined as polygons sharing only a point, but no edges. Therefore, it represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook*). <!--- All of these relationships can be formally expressed using the DE-9IM strings, as illustrated in Figure XX. -->Furthermore, these base definitions can be expanded into higher-order contiguity weights (neighbours of neigbours) to model relationships beyond immediate neighbours.
+
+-nejaky deeper popis contigutiy matrix? symetričnost, row standartization?
+
+-In geographical analysis, Rook or Queen contiguity is usually the standard. There is no concensus, which matrices use when, it is mostly experimental as it depends on the character of the data, but it impacts the outcome of the statistic.. nejaka hlubsi resers na specfication of weight matrix?
+
+<!---Euler in his Konigsberg bridges solution relied on the concept of a node degree - the number of edges incident to a given node, observing that the problem has a solution only if all the nodes (landmasses) have an even degree (are connected by an even number of bridges). --->
+
+### Spatial autocorrelation
+
+According to Tobler's Firts law of geography "everything is related to everything else, but near things are more related than distant things". This law implies that spatial data show so called spatial autocorrelation. Spatial autocorrelation is a measure, how similar or dissimilar are nearby observations. We have either positive spatial autocorrelation, meaning that observations geographically close have similar values, or negative spatial autocorrelation, where similar values tend to be dispersed and the data resemble a checkerboard pattern.
+
+-fig negative/random/positive spatial autocorrelation
+
+-spatial autocrrelation pozivame tehdy a tehdy
+
+#### Moran's I
+
+To better understand SAC, we should look at morans cactterpolt (see fig), which visulizes the spatial lag of observations. Spatial lag of an observation i is essentially the weighted average of its neigbours defined by $W$, therefore it can be denoted as
+
+$$
+y_{sl-i} = \sum_{j} w_{ij}y_j
+$$ {#eq-lag}
+
+where $w_{ij}$ is an element of $W$ capturing the spatial relationship between observations $i$ and $j$ and $y_j$ is the centered value of observation $j$. Common pratice is to row standartize $W$, so that the sum of every row is exactly 1. In most cases, neigbours are defined by either QUeen or Rokk contiguity. On Moran scatter plot, spatial lag is represented on y- axis and te centred value of an observation on x-axis.
+
+-fig moran scatter plot
+
+Moran sactterplot alredy provides some some information about both global and local spatial aoutocorrelation. First, global SAC indicators describe the overall degree of clustering or dispersion of the whole dataset. The line on moran scatterplot represetns best linear regression fit for the data values and their spatial lag and its slope corresponds to the value of global Morans I [@moran1950], most commonly used metric in SAC. It can be written as:
+
+$$
+I = \frac{n}{\sum_i \sum_j w_{ij}} \frac{\sum_i \sum_j w_{ij} z_i z_j}{\sum_i z_i^2}
+$$ {#eq-global_i}
+
+where $n$ is the number of observations, $w_{ij}$ is an element of $W$ and $z_i$ and $z_j$ is the satnatrtized values of observation $i$ and $j$, respectively. The value of $I$ is from the interval -1 to 1, where values close 1 indicate positive autocorrelation, vlaues closee to -1 inticate negative spatial autocorrelation and values close to 0 indicate spatial randomness.
+
+Looking back at the morans sactterplot, its four quadrants corrspond to different sutiations:
+
+-   High-High
+
+-   Low-Low
+
+-   Low-High
+
+-   High-Low
+
+The category where the observation belongs to can be derived just from the signs of centred observation value and its spatial lag, but to check wheter the observation is in the category rightfully or on accident, we need to use LISA and more importantly, calculate its statistical significance. The most commonly used indicator is local Morans I, defined as:
+
+$$
+I_i = \frac{z_i}{m_2} \sum_{j} w_{ij}z_j \; ; \; m_2 = \frac{\sum_i z_i^2}{n}
+$$ {#eq-local_i}
+
+where $z_i$ and $z_j$ are centered values on observation i and j, respectively, $w_{ij}$ is the spatial weight for a pair of bservation $i$ and $j$ and $m_2$ is the second moment (variance). If the reulsting value is positive, the obseravtion is either HH or LL cluster. f its negative, it belongs to Lh or HL.
+
+To identify homogenous or heterogenous clusters that didnt happen by spatially random porcess, the values of local morans I arent as important, but their statistical asignificance is. It is usually measured by p-value, with the null hypothesis that the data values are distributed randomlly and dont give any information about its surroundigs. To obatin the p-value, the obseravtion values are permuted in space (usually 999 times, esda default), and LISA is calculated for those permutations. P-value than corresponds to the proportion of permutations that accept the null hypothesis. For the statistic to be cosidred significan, usually $p<0.05$ . In pratice, we ofthen see maps colouring only those significant clusters, to which we reffer as lISA to cluster maps.
+
+-fig lisa cluster map
+
+We see a lot of grey areas on the map as those arent statistically significant as clusters. We see very little HL and LH clusters commpared to HH and LL which is agrees with toblers first law of geogrpahy - on real data, similar values tend to be near each other.
+
+#### Geary C
+
+Geary C is another SAC indicator. Its global version can be written as
+
+$$
+C = \frac{(n - 1)}{2 \sum_i \sum_j w_{ij}} \frac{\sum_i \sum_j w_{ij} (y_i - y_j)^2}{\sum_i (y_i - \bar{y})^2}
+$$ {#eq-global_c}
+
+where $n$ is the number of observations, $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$, respectively and $\bar{y}$ is the mean value of the whole dataset. Unlike Moran's I, which uses cross-products on the standartized values, Geary's C computes differences of raw values, which in case of very different neigbouring values, it spikes the resulting Geary C value up, making it more sensitive to appearance of negative SAC. Higher values of C indicate negative spatial correlation and values close to zero indicate positive spatial autocorrelation, so the values only have a lower bound (zero) and can reach any positive value. Values close to one indicate random configuartion of values.
+
+Local Geary C, proposed by Anselin, can be written as
+
+$$
+c_i = \sum_j w_{ij}(y_i - y_j)^2
+$$ {#eq-local_c}
+
+where $n$ is the number of observations, $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$, respectively and $\bar{y}$ is the mean value. High values of local $c_i$ highlight areas of abrupt changes in value, but as any LISA, its statistical significance that identifies wherther it actually matters.
+
+#### Gettis Ord G
+
+Proposed by @getis1992, the global $G$ is a measure of spatial autocorrelation based on distance, unlike Morans I or Geary C, which uses contiguity weights in vast majority of cases. It can be written as
+
+$$
+G(d) = \frac{\sum_i \sum_j w_{ij}(d) y_i y_j}{\sum_i \sum_j y_i y_j}
+$$ {#eq-global_g}
+
+where $w_{ij}(d)$ is the binary weight between observation $i$ and $j$ based on a distance band (1 if within the distance band, 0 if not). The weights don't have to be strictly binary, but usually they are. $G$ measures the degree of positive spatial autocorrelation. The local version of $G$ can be defined in two ways, $G_i$ doenst include observation's own value, but $G_i^*$ does, therefore
+
+$$ G_i = \frac{\sum_{j \neq i} w_{ij} x_j}{\sum_{j \neq i} x_j},G_i^* = \frac{\sum_j w_{ij} x_j}{\sum_j x_j} $$ {#eq-local_g}
+
+$G_i$ and $G_i^*$ help identify hot spots (areas with high values) and cold spots (
+
+### Regionalization
+
+Regionalization is the process of creating regions [@duque2007]. It is essentially grouping similar observations together, which we recognize as clustering, but with a spatial constraint that two observations (polygons) can be in the same cluster only if they share a border - contiguity. Regionalization is therefore known as spatially constrained clustering.
+
+The objective of any clustering method is to minimize the dissimilarity within each cluster. The overall dissimilarity of a dataset is described with the sum of all pairwise distances $T$:
+
+$$T = \frac{1}{2} \sum_{i=1}^{n} \sum_{j=1}^{n} d_{ij}$$ {#eq-reg_pairwise_dist}
+
+where $d_{ij}$ is a measure of dissimilarity. $T$ consists of two complementary components: within-cluster dissimilarity $W$ and between-cluster dissimilarity $B$, which can be evaluated during the clustering (regionalization) process:
+
+$$T=W+B$$ {#eq-sum_wb}
+
+where
+
+$$W = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \in h} d_{ij}, \qquad B = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \notin h} d_{ij}$$ {#eq-wb_explained}
+
+$W$ serves as a loss function, the goal is to minimize it. Some methods explicitly use $W$ as the clustering criterion (SCHC using Ward's linkage) whereas others use other metrics to approximate the goal.
+
+This chapter will serve as an overview of widely used methods and in the experimental part, we will test the robustness to polygonal coverage violations of two methods - agglomerative clustering/SCHC and SKATER.
+
+#### Agglomerative clustering/SCHC
+
+Spatially constrained hierarchical clustering is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage. By distance, we mean the euclidean one as it is used in vast majority of applications and also required for the use of Ward's linkage, which is preferred for regionalization and will be further described in this chapter. Other linkages are single linkage, using the minimum distance between clusters, complete linkage using the maximum distance and average linkage using the mean distance.
+
+The dissimilarity is denoted in dissimilarity matrix $D$, which is initially $n×n$ as each observation starts as its own cluster, and each element $d_{ij}$ represents the dissimilarity between each pair of clusters (or observations). The algorithm then merges the two clusters/observations, that have the smallest dissimilarity (smallest value from $D$) under the contiguity constraint. $D$ is then updated using an updating formula, which computes the dissimilarities between the new cluster $C$ and a cluster $P$, reducing both dimensions of $D$ by 1 in each iteration.
+
+Ward's method, developed by @ward1963, explicitly tries to minimize the within-cluster dissimilarity (variance) defined trough the sum of squared errors ($WSS$). The input structure to use Ward's method is a $n×p$ matrix $X$, where $n$ is the number of observations, $p$ is the number of variable and each element represents the (standartized) value of each variable for each observation. $WSS$ can be then formally defined as:
+
+$$WSS = \sum_{i \in C} (x_i - \bar{x}_C)^2$$ {#eq-wss_schc}
+
+where $x_i$ is a single row of $X$ (the vector of attributes for observation $i$) and $\bar{x}_C$ is the centroid of all observations in cluster $C$. Intuitively, the overall $WSS$ increases when we merge clusters, so the goal is to minimize this increase. This actually turns out to be merging clusters/observations which's centroids are closest to each other based on a dissimilarity matrix $D$. Ward's method expresses the dissimilarity trough the square of the Euclidean distance, therefore the dissimilarity between clusters $A$ and $B$:
+
+$$d^2_{AB} = \frac{2n_A n_B}{n_A + n_B} \| \bar{x}_A - \bar{x}_B \|^2$$ {#eq-dissimilarity}
+
+The updating formula to compute the dissimilarities between the new cluster $C$ and a point (cluster) $P$ after merging clusters $A$ and $B$ is defined as:
+
+$$d^2_{PC} = \frac{n_A + n_P}{n_C + n_P} d^2_{PA} + \frac{n_B + n_P}{n_C + n_P} d^2_{PB} - \frac{n_P}{n_C + n_P} d^2_{AB}$$ {#eq-dissimilarity-updating}
+
+As mentioned above, the clusters/observations can be only merged under the contiguity constraint, which is denoted in spatial weight matrix $W$, meaning that observations $i$ and $j$ can be merged only if $w_{ij} \neq 0$. AFter the merge, $W$ needs to be updated. If $i$ and $j$ were merged into a new cluster $C$, $i$-th and $j$-th row and column will be replaced by $C$. The relationship between $C$ and the rest of the clusters $P$ will be denoted following $w_{PC}= 1$ if $w_{iP} \neq 0 \lor w_{jP} \neq 0$.
+
+Common pratice is to define the number of clusters or number of regions in case of regionalization. This parameter stops the the hierarchical tree building called a dendrogram (see fig. x) but software tools like sklearn allow to built the whole tree even though it wont be necessary for the clustering.
+
+-dendrogram
+
+-definovany jen pro 1 componentu?
+
+-nevratny
+
+#### SKATER
+
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method but unlike SCHC, it is not agglomerative, but divisive. It is based on pruning a minimum spanning tree (MST). MST is a graph structure, defined as subset of edges that connect all nodes of the graph with minimum possible total edge weight.
+
+MST for the purpose of SKATER algorithm is a subset of edges from contiguity spatial weights graph (see def in chapter x). The weights are assigned to each edge usually based on their Euclidean distance in attribute space, therefore:
+
+$$d(i, j) = d(x_i, x_j) = \sum_{l=1}^{n} (\mathbf{x}_{il} - \mathbf{x}_{jl})^2$$ {#eq-euclidean_distance_skater}
+
+where $x_i$, $x_j$ are attribute vectors of observations $i$ and $j$, which is understood to be the dissimilarity.
+
+The initial MST has exactly $n-1$ edges. All observation are considered to be in one region. The MST is pruned by removing an edge which increases the between-cluster dissimilarity the most. This is accessed trough calculating the sum of squared devations (SSD) calculated as ... for each subtree and subtrating them from the SSD of the whole tree. If we are about to split a tree into subtree A and B, the increase of between cluster dissimilarity is calculated as
+
+$$\Delta SSD=SSD_T-(SSD_A+SSD_B)$$ {#eq-ssd_skater}
+
+and needs to be the largest.
+
 ## Topology in geography
 
 Topology is a mathematical discipline that “studies properties of spaces that are invariant to continuous deformation” (@waterloo_topology). In geographic context, it means focusing strictly on the spatial relationships between features, such as connectivity, adjacency, and containment (citace), rather than their absolute geometric shape, distance, or magnitude. The discipline was formally established in the early 20th century, however its roots trace back to Leonhard Euler’s solution to the Seven Bridges of Königsberg problem (@euler1741solutio). The objective of the problem was to cross every bridge in the city exactly once and return to the starting point. The physical distances and exact shapes of the landmasses were entirely irrelevant to the solution, the outcome depended solely on knowing which bridges connected which landmasses. By abstracting the city into a graph (see definition in chap. xx) while preserving the information about the connectivity of the landmasses, he was able to solve the problem.
@@ -84,16 +262,18 @@ Geometric and topo-semantic errors are particularly problematic when detecting t
 
 According to @ubedaTopologicalErrorCorrecting1997a, the topology error correction process consists of three steps: definition, checking, and correction. Definitions of the errors is esentially establishing the spatial constraints input data must satisfy. These user-defined constraints are derived from formal spatial predicates. Many of these rules are explicitely implemented as ready-to-use topology checkers in desktop GIS software like *QGIS* and *ArcGIS Pro* (e. g. `must not have dangles` for line features, `must not overlap` for line or polygonal features).
 
-Valid polygonal coverage requires specific set of topological constraints, which it must satisfy @jtsLinearThinkingPolygonal2022:
+Polygonal coverage, or also planar enforcement, is a specific case of these rules. It is a strict requirement for contiguity detection @rey2022PySAL. Valid polygonal coverage requires specific set of topological constraints, which it must satisfy @jtsLinearThinkingPolygonal2022:
 
 -   polygon interiors must not overlap (no slivers),
 -   a shared boundary between polygons must have the same set of vertices (no gaps).
 
--geoplanar also mentions non-planar edges/touches.. planar enforcement
-
--If these constraints are violated, the logical contiguity between polygons is compromised. Enforcing valid polygonal coverage ensures accurate spatial analysis and improves cartographic visualization.
-
 -fig topology errors slivers, gaps
+
+-Geoplanar also mentions non-planar touches and edges, which by the general definition meet polygonal coverage (planar enforcement) requirements, but geometrically, they would violate it and contiguity detection would be compromised. Enforcing valid polygonal coverage ensures accurate spatial analysis and improves cartographic visualization.
+
+The contiguity definitions seem intuitive, however, the definitions of sharing an edge or sharing a vertex are incomplete. In libpysal, sharing an edge is implemented as sharing two consecutive vertices and similarly, sharing a vertex means that both polygons have a vertex of the same coordinates. This can become problematic in case of non-planar edges and non-planar touches (see Fig.) (citace geoplanar). In situations like these, Queen contiguity wont be detected as the polygons are not planar enforced.
+
+-Libpysal implements Queen and Rook contiguity, alongside fuzzy contiguity, which serves as more flexible
 
 Various software tools can evaluate the datasets for topology violations. *Shapely*, python wrapper for the *GEOS* library, implements functions for checking individual geometric validity rather than global topology. *JTS Topology Suite* (*JTS*), an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like *QGIS* and *ArcGIS Pro* evaluate the selected topology rules (i. e. for polygonal coverage `must not overlap` and `must not have gaps`) and visually highlight every error on the map.
 
@@ -103,50 +283,42 @@ While *JTS*, *QGIS*, and *ArcGIS* Pro validate topology by checking individual g
 
 -even though such tools exist, topological errors still occur, a presne proto pisu tuhle praci
 
-## Spatial weights and contiguity
+# Methodology
 
-Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity). Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance, hybrid weights). These spatial weights are usually stored in either spatial weights matrix or spatial weights graph, which will be explained in this chapter. Afterwards, we will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
+## Simulated data
 
-Spatial weight matrix, denoted as $W$, is one of structures used in the computation of spatial statistics. $W$ is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ represents weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal (@rey2022PySAL), geoda (@anselin2006GeoDa) or spdep (@spdep) also implement sparse matrix, which stores only non-zero elements.
+Three sizes of polygonal datasets were generated (n = 25, 100, and 400). To vary the average number of neighbours, three lattice types (square, pentagonal, and hexagonal) were applied to each size, yielding 9 distinct spatial configurations (fig x).
 
-<!--- W often has to be row-standartized. That is dividing each row by its sum so that sum of every row equals exactly 1  --->
+![Simulated data spatial configurations.](figures/structures.png){#fig-structures fig-align="center" width="60%"}
 
-Another structure used to store spatial weights is spatial weights graph. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations.
+### Spatial autocorrelation
 
--fig nejaky data, jejich spatial weight matrix, jejich graph
+Attribute values were generated trough a pure spatial process using a spatial autoregressive (SAR) model, similarly to @floraxImpactsMisspecifiedSpatial1995, calculated by the following equation for each of the nine spatial configurations:
 
-Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary) and other spatial statistics, the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012).
+$$y=(I-\rho W)^{-1} \epsilon$$
 
-<!--- A graph can either be undirected, where edges have no orientation and $\{i,j\} = \{j,i\}$, or directed, where each edge can be assigned a direction (one-way or both), therefore $(i,j) \neq (j,i)$. --->
+where $y$ is the resulting vector of generated attribute values, $I$ is a identity matrix, $\rho$ is the spatial autoregressive parameter, $W$ is Rook contiguity spatial weight matrix derived from each spatial configuration and $\epsilon$ is random normal error vector. $\rho$ was varied from -0.9 to 0.9 in increments of 0.1, with 10 iterations per value, see examples in Fig. x. This produced 190 unique value datasets per spatial structure representing a wide spectrum differently spatially autocorrelated datasets.
 
-### Contiguity
+-fig ruzny spatial autocorrelations
 
-Spatial objects that share a common border are considered to be contiguous. However, "sharing a common border" isn't a rigorous definition, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces: *Rook*, *Queen*, and *Bishop*.
+### Regionalization
 
-For a pair of polygons to be considered *Rook* neighbours, the polygons must share an edge (a boundary of non-zero length). *Queen* contiguity is less strict - the polygons are considered neighbours if they share at least one point (vertex or a shared edge). *Queen* contiguity corresponds to the standard Touches spatial predicate. Bishop contiguity, rarely used on its own but occasionally a component of hybrid weights (@shortridgePracticalLimitsMorans2007), is strictly defined as polygons sharing only a point, but no edges. Therefore, it represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook*). All of these relationships can be formally expressed using the *DE-9IM* strings, as illustrated in Figure XX. Furthermore, these base definitions can be expanded into higher-order contiguity weights (neighbours of neigbours) to model relationships beyond immediate neighbours.
+First, regions were predefined on all three lattice types at two dataset sizes, $n=100$ and $n=400$. For each of those six spatial configurations, 5 polygons were randomly selected as seeds, which grow into spatially connected regions [@guo2023], repeated 10 times, generating 10 zonations for each spatial configuration. For $n=100$, the number of minimum polygons is set 12 and for $n=400$ to 48.
 
--fig 3 contiguity ilustrace s de9im stringy
+Afterwards, the data was generated to exhibit strict stratified heterogeneity, meaning that true regression coefficients are constant within each predefined region but differ across regions. The underlying data-generating process follows a simple linear model used in @guo2023:
 
--nonplanar enforced edges/touches geoplanar
+$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \epsilon$$
 
--nejaky deeper popis contigutiy matrix? symetričnost, row standartization?
+where the independent variables are drawn i.i.d. from a uniform distribution $x_1, x_2 \sim \mathcal{U}[0, 1)$ and the error term $\epsilon$ is from is from normal distribution with mean 0 and variance $\sigma^2$, therefore $\epsilon \sim \mathcal{N}(0, \sigma^2)$. $\sigma=0.1$ for all simulations.
 
--In geographical analysis, Rook or Queen contiguity is usually the standard. There is no concensus, which matrices use when, it is mostly experimental as it depends on the character of the data, but it impacts the outcome of the statistic.. nejaka hlubsi resers na specfication of weight matrix?
+For each of the 5 regions, covariate coefficients $\beta_1, \beta_2$ take different values from $\{-2,-1,0,1,2\}$ and $\beta_0=0$ in all regions. For each zonation, 5 attribute values were generated by this process, which were then fitted into regionalization models.
 
--Fuzzy contiguity
+## Real data
 
--tady bude diagram pro premka
+## Contiguity corruption
 
-<!---Euler in his Konigsberg bridges solution relied on the concept of a node degree - the number of edges incident to a given node, observing that the problem has a solution only if all the nodes (landmasses) have an even degree (are connected by an even number of bridges). --->
+To simulate erroneous topology, controlled adjacency corruptions are applied to a set of topologically correct polygons. These corruptions consist of removing edges from the $W$ reflecting Rook contiguity of polygons. <!-- where two polygons are considered a neighbour if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping edges, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data. -->Missing adjacencies are spatially distributed in three ways:
 
-## Spatial autocorrelation
-
-### Moran's I
-
-### Geary's C
-
-## Regionalization
-
-### Agglomerative clustering
-
-### SKATER
+-   randomly, where adjacency relations are removed uniformly at random across the entire graph,
+-   on region borders, simulating errors arising from the integration of multiple spatial datasets,
+-   locally, where adjacencies are removed within a spatially contiguous subregion, representing localised human digitisation or editing errors.
