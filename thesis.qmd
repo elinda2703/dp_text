@@ -8,13 +8,13 @@
 
 ### Spatial weights
 
-Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity). Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance) among others. Afterwards, we will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
+Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity) among others. Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance). We will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
 
 Spatial weights can be represented as a matrix, denoted as $W$. $W$ is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ corresponds to the weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal [@rey2022PySAL], geoda [@anselin2006GeoDa] or spdep [@spdep] also implement sparse matrix, which stores only non-zero elements.
 
-Spatial weight matrix can be understood as a graph adjacency matrix, therefore spatial graph is another representation of spatial weights. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations. Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph.
-
 -fig nejaky data, jejich spatial weight matrix, jejich graph
+
+Spatial weight matrix can be understood as a graph adjacency matrix, therefore spatial graph is another representation of spatial weights. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations. Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph.
 
 -neco o symetricnosti?
 
@@ -36,7 +36,7 @@ For a pair of polygons to be considered *Rook* neighbours, the polygons must sha
 
 According to Tobler's Firts law of geography "everything is related to everything else, but near things are more related than distant things". This law implies that spatial data show so called spatial autocorrelation. Spatial autocorrelation is a measure, how similar or dissimilar are nearby observations. We have either positive spatial autocorrelation, meaning that observations geographically close have similar values, or negative spatial autocorrelation, where similar values tend to be dispersed and the data resemble a checkerboard pattern.
 
--fig negative/random/positive spatial autocorrelation
+![Spatial autocorrelation.](figures/sac.png){#fig-sac fig-align="center" width="80%"}
 
 -spatial autocrrelation pozivame tehdy a tehdy
 
@@ -273,6 +273,8 @@ Polygonal coverage, or also planar enforcement, is a specific case of these rule
 
 The contiguity definitions seem intuitive, however, the definitions of sharing an edge or sharing a vertex are incomplete. In libpysal, sharing an edge is implemented as sharing two consecutive vertices and similarly, sharing a vertex means that both polygons have a vertex of the same coordinates. This can become problematic in case of non-planar edges and non-planar touches (see Fig.) (citace geoplanar). In situations like these, Queen contiguity wont be detected as the polygons are not planar enforced.
 
+<!-- where two polygons are considered a neighbour if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping edges, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data. -->
+
 -Libpysal implements Queen and Rook contiguity, alongside fuzzy contiguity, which serves as more flexible
 
 Various software tools can evaluate the datasets for topology violations. *Shapely*, python wrapper for the *GEOS* library, implements functions for checking individual geometric validity rather than global topology. *JTS Topology Suite* (*JTS*), an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like *QGIS* and *ArcGIS Pro* evaluate the selected topology rules (i. e. for polygonal coverage `must not overlap` and `must not have gaps`) and visually highlight every error on the map.
@@ -297,9 +299,9 @@ Attribute values were generated trough a pure spatial process using a spatial au
 
 $$y=(I-\rho W)^{-1} \epsilon$$
 
-where $y$ is the resulting vector of generated attribute values, $I$ is a identity matrix, $\rho$ is the spatial autoregressive parameter, $W$ is Rook contiguity spatial weight matrix derived from each spatial configuration and $\epsilon$ is random normal error vector. $\rho$ was varied from -0.9 to 0.9 in increments of 0.1, with 10 iterations per value, see examples in Fig. x. This produced 190 unique value datasets per spatial structure representing a wide spectrum differently spatially autocorrelated datasets.
+where $y$ is the resulting vector of generated attribute values, $I$ is a identity matrix, $\rho$ is the spatial autoregressive parameter, $W$ is Rook contiguity spatial weight matrix derived from each spatial configuration and $\epsilon$ is random normal error vector. $\rho$ was varied from -0.9 to 0.9 in increments of 0.1, with 10 iterations of $\epsilon$ per $\rho$ value, see examples in Fig. x. This produced 190 unique value datasets per spatial structure representing a wide spectrum differently spatially autocorrelated datasets.
 
--fig ruzny spatial autocorrelations
+![Examples of generated SAR data.](figures/moran_extremes.png){#fig-sar_examples fig-align="center" width="80%"}
 
 ### Regionalization
 
@@ -317,8 +319,14 @@ For each of the 5 regions, covariate coefficients $\beta_1, \beta_2$ take differ
 
 ## Contiguity corruption
 
-To simulate erroneous topology, controlled adjacency corruptions are applied to a set of topologically correct polygons. These corruptions consist of removing edges from the $W$ reflecting Rook contiguity of polygons. <!-- where two polygons are considered a neighbour if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping edges, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data. -->Missing adjacencies are spatially distributed in three ways:
+To simulate erroneous topology, controlled adjacency corruptions are applied to a set of topologically correct polygons. These corruptions consist of removing edges from the $W$ reflecting Rook contiguity of polygons. Missing adjacencies are spatially distributed in three ways:
 
--   randomly, where adjacency relations are removed uniformly at random across the entire graph,
--   on region borders, simulating errors arising from the integration of multiple spatial datasets,
--   locally, where adjacencies are removed within a spatially contiguous subregion, representing localised human digitisation or editing errors.
+-   Randomly, where adjacency relations are removed uniformly at random across the entire graph. Any edge can be deleted.
+-   On region borders, simulating errors arising from the integration of multiple spatial datasets. Any two of the predefined regions can be deleted.
+-   Locally, where adjacencies are removed within a spatially contiguous subregion, representing localised human digitisation or editing errors. One of predefined regions is selected and edges within it as well as those who only have one node in the region, can be deleted.
+
+![Deletable edges: random (left), region borders (center), local (right)](figures/cor_method.png){#fig-cor_method fig-align="center" width="80%"}
+
+Since spatial autocorrelation measures aren't explicitely defined for observations with no neighbours, reffered to as isolates, their occurence had to be prevented while corrupting $W$. What this means is that if at least one of two observations connected by an edge has a node degree of 1 (has only 1 neigbour), the edge cannot be deleted. Those have to be subtracted from the deletable edges subgraph.
+
+In similar fashion, regionalization techniques are not defined for if $W$ has more than one component. Therefore edges known as bridges, after whose deletion the graph would split into more components need to be kept. therefore subtracted from deletable edges subgraph. In case the edges are removed randomly, it will end up in MST.
