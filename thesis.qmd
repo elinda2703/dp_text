@@ -112,7 +112,7 @@ $$ G_i = \frac{\sum_{j \neq i} w_{ij} x_j}{\sum_{j \neq i} x_j},G_i^* = \frac{\s
 
 where $w_{ij}$ is the weight between observation $i$ and $j$. $G$ captures the overall degree of positive spatial autocorrelation, where high $G$ values are associated with hot spots (areas with homogenously high values) and low values are associated with cold spots (areas with homogenously low values).
 
-Getis-Ord G is complementary to local Moran's I. Local Moran's I primarily distinguishes between spatial clusters (HH/LL) and spatial outliers (HL/LH), but a positive value of local Moran's I does not by itself reveal whether the underlying cluster consists of high or low values. $G$ is specifically designed to make this distinction, identifying whether a concentration of similar values forms a hot spot or a cold spot. However, because $G_i$ Gi​ and $G_i$​ are computed from sums of raw, non-negative attribute values rather than centered or standardized ones, they cannot detect negative spatial autocorrelation.
+Getis-Ord G is complementary to local Moran's I. Local Moran's I primarily distinguishes between spatial clusters (HH/LL) and spatial outliers (HL/LH), but a positive value of local Moran's I does not by itself reveal whether the underlying cluster consists of high or low values. $G$ is specifically designed to make this distinction, identifying whether a concentration of similar values forms a hot spot or a cold spot. However, because $G_i$ and $G_i^*$​ are computed from sums of raw, non-negative attribute values rather than centered or standardized ones, they cannot detect negative spatial autocorrelation.
 
 ### Regionalization
 
@@ -152,7 +152,7 @@ After two clusters $A$ and $B$ are merged into a new cluster $C$, the dissimilar
 
 $$d^2_{PC} = \frac{n_A + n_P}{n_C + n_P} d^2_{PA} + \frac{n_B + n_P}{n_C + n_P} d^2_{PB} - \frac{n_P}{n_C + n_P} d^2_{AB}$$ {#eq-dissimilarity-updating}
 
-As mentioned above, the clusters/observations can be only merged under the contiguity constraint, which is denoted in spatial weights matrix $W$. For this thesis, we will assume a binary $W$, meaning that observations $i$ and $j$ can be merged only if $w_{ij}-1$. After the merge, $W$ needs to be updated. If $i$ and $j$ were merged into a new cluster $C$, $i$-th and $j$-th row and column will be replaced by $C$. The relationship between $C$ and the rest of the clusters $P$ will be set to $w_{PC}= 1$ if $w_{iP}=1 \lor w_{jP}=1$, inheriting all the neighbours of both $i$ and $j$.
+As mentioned above, the clusters/observations can be only merged under the contiguity constraint, which is denoted in spatial weights matrix $W$. For this thesis, we will assume a binary $W$, meaning that observations $i$ and $j$ can be merged only if $w_{ij}=1$. After the merge, $W$ needs to be updated. If $i$ and $j$ were merged into a new cluster $C$, $i$-th and $j$-th row and column will be replaced by $C$. The relationship between $C$ and the rest of the clusters $P$ will be set to $w_{PC}= 1$ if $w_{iP}=1 \lor w_{jP}=1$, inheriting all the neighbours of both $i$ and $j$.
 
 In practice, the number of clusters (regions) $k$ is fixed in advance, and the merging process stops once this number is reached. This corresponds to "cutting" the hierarchical tree, or dendrogram, at the appropriate height.
 
@@ -228,7 +228,7 @@ During the 1980s, terms for spatial relations were mentioned in literature, howe
 
 $$\text{DE-9IM}(a,b) = \begin{bmatrix} \dim(a^\circ \cap b^\circ) & \dim(a^\circ \cap \partial b) & \dim(a^\circ \cap b^-) \\ \dim(\partial a \cap b^\circ) & \dim(\partial a \cap \partial b) & \dim(\partial a \cap b^-) \\ \dim(a^- \cap b^\circ) & \dim(a^- \cap \partial b) & \dim(a^- \cap b^-) \end{bmatrix}$$ {#eq-de9im}
 
-where...
+where $a$ and $b$ are the input geometries, $a^\circ$, $b^\circ$; $\partial a$, $\partial b$; and $a^-$, $b^-$ denote the interior, boundary, and exterior of geometries $a$ and $b$, respectively. The operator $\cap$ represents the set intersection, and $\dim(X)$ returns the maximum topological dimension of the intersection:
 
 -   False (-1) if there is no intersection,
 -   0 if the intersection is a point,
@@ -280,14 +280,14 @@ Geometric and topo-semantic errors are particularly problematic when detecting t
 
 According to @ubedaTopologicalErrorCorrecting1997a, the topology error correction process consists of three steps: definition, checking, and correction. Definitions of the errors is esentially establishing the spatial constraints input data must satisfy. These user-defined constraints are derived from formal spatial predicates. Many of these rules are explicitely implemented as ready-to-use topology checkers in desktop GIS software like *QGIS* and *ArcGIS Pro* (e. g. `must not have dangles` for line features, `must not overlap` for line or polygonal features).
 
-Polygonal coverage, or also planar enforcement, is a specific case of these rules. It is a strict requirement for contiguity detection @rey2022PySAL. Valid polygonal coverage requires specific set of topological constraints, which it must satisfy @jtsLinearThinkingPolygonal2022:
+Polygonal coverage, or also planar enforcement, is a specific case of these rules. It is a strict requirement for contiguity detection [@rey2022PySAL]. Valid polygonal coverage requires specific set of topological constraints, which it must satisfy [@jtsLinearThinkingPolygonal2022]:
 
 -   polygon interiors must not overlap (no slivers),
 -   a shared boundary between polygons must have the same set of vertices (no gaps).
 
 -fig topology errors slivers, gaps
 
-Geoplanar also adresses these non-planar touches and edges as planar enforcement violation as in their presence, contiguity detection is compromised. For Rook contiguity, two polygons are considered a neighbour if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping boundaries, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. Similarly with Queen contiguity - two polygons are considered a neighbour if they share a vertex. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data.
+Geoplanar also adresses non-planar touches and edges as planar enforcement violation. In their presence, contiguity detection is compromised as two polygons are considered a Rook contiguity neighbours if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping boundaries, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. Similarly with Queen contiguity - two polygons are considered a neighbour if they share a vertex. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data.
 
 -fig non planar touches/edges
 
