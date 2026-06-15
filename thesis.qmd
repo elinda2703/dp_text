@@ -20,7 +20,7 @@ Spatial weight matrix can be understood as a graph adjacency matrix, therefore s
 
 <!--- Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary) and other spatial statistics, the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012). --->
 
-#### Contiguity
+#### Contiguity {#sec-contiguity}
 
 Spatial objects that share a common border are considered to be contiguous. However, "sharing a common border" isn't a rigorous definition, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces: *Rook*, *Queen*, and *Bishop*.
 
@@ -34,7 +34,7 @@ For a pair of polygons to be considered *Rook* neighbours, the polygons must sha
 
 ### Spatial autocorrelation
 
-According to Tobler's Firts law of geography "everything is related to everything else, but near things are more related than distant things". This law implies that spatial data show so called spatial autocorrelation. Spatial autocorrelation is a measure, how similar or dissimilar are nearby observations. We have either positive spatial autocorrelation, meaning that observations geographically close have similar values, or negative spatial autocorrelation, where similar values tend to be dispersed and the data resemble a checkerboard pattern.
+According to Tobler's Firts law of geography "everything is related to everything else, but near things are more related than distant things". This principle underlies the concept of spatial autocorrelation (SAC) - the degree to which the value of an observation resembles the values of its spatial neighbours. Under a positive SAC, observations that are geographically close have similar values and tend to cluster. Under a negative SAC, similar values tend to be spatially dispersed rather than clustered, resembling a checkerboard pattern.
 
 ![Spatial autocorrelation.](figures/sac.png){#fig-sac fig-align="center" width="80%"}
 
@@ -42,79 +42,77 @@ According to Tobler's Firts law of geography "everything is related to everythin
 
 #### Moran's I
 
-To better understand SAC, we should look at morans cactterpolt (see fig), which visulizes the spatial lag of observations. Spatial lag of an observation i is essentially the weighted average of its neigbours defined by $W$, therefore it can be denoted as
+A useful visualization to built some intuition for SAC is the Moran scatterplot which visualizes the relationship between the value of each observation and the values of its neighbour - spatial lag. The spatial lag of observation $i$ is the weighted sum of the centered values of its neighbours, as defined by the spatial weights matrix $W$:
 
 $$
 y_{sl-i} = \sum_{j} w_{ij}y_j
 $$ {#eq-lag}
 
-where $w_{ij}$ is an element of $W$ capturing the spatial relationship between observations $i$ and $j$ and $y_j$ is the centered value of observation $j$. Common pratice is to row standartize $W$, so that the sum of every row is exactly 1. In most cases, neigbours are defined by either QUeen or Rokk contiguity. On Moran scatter plot, spatial lag is represented on y- axis and te centred value of an observation on x-axis.
+where $w_{ij}$ is an element of $W$ capturing the spatial relationship between observations $i$ and $j$ and $y_j$ is the centered value of observation $j$. Common pratice is to row standartize $W$, so that the weights in each row sum to exactly one. Neighbours are most commonly defined using either Queen or Rook contiguity (see @sec-contiguity).
 
 -fig moran scatter plot
 
-Moran sactterplot alredy provides some some information about both global and local spatial aoutocorrelation. First, global SAC indicators describe the overall degree of clustering or dispersion of the whole dataset. The line on moran scatterplot represetns best linear regression fit for the data values and their spatial lag and its slope corresponds to the value of global Morans I [@moran1950], most commonly used metric in SAC. It can be written as:
+On the Moran scatterplot, each observation is plotted with its centered value on the x-axis and its spatial lag on the y-axis. At the global level, the slope of the best-fit regression line through the scatterplot corresponds to the value of global Moran's I [@moran1950], the most widely used SAC statistic. It is defined as
 
 $$
 I = \frac{n}{\sum_i \sum_j w_{ij}} \frac{\sum_i \sum_j w_{ij} z_i z_j}{\sum_i z_i^2}
 $$ {#eq-global_i}
 
-where $n$ is the number of observations, $w_{ij}$ is an element of $W$ and $z_i$ and $z_j$ is the satnatrtized values of observation $i$ and $j$, respectively. The value of $I$ is from the interval -1 to 1, where values close 1 indicate positive autocorrelation, vlaues closee to -1 inticate negative spatial autocorrelation and values close to 0 indicate spatial randomness.
+where $n$ is the number of observations, $w_{ij}$ is an element of $W$ and $z_i$ and $z_j$ is the standartized values of observation $i$ and $j$.
 
-Looking back at the morans sactterplot, its four quadrants corrspond to different sutiations:
+The value of $I$ typically falls within the interval $[-1, 1]$. Values close to 1 indicate strong positive spatial autocorrelation, values close to -1 indicate strong negative spatial autocorrelation, and values close to 0 indicate a spatially random pattern.
 
--   High-High
+At the local level, the four quadrants of the Moran scatterplot correspond to four characteristic spatial situations, distinguished by the signs of an observation's value and its spatial lag:
 
--   Low-Low
+-   High-High (HH): an observation with an above-average value surrounded by neighbours with above-average values - a cluster of high values.
 
--   Low-High
+-   Low-Low (LL): an observation with a below-average value surrounded by neighbours with below-average values - a cluster of low values.
 
--   High-Low
+-   Low-High (LH): an observation with an above-average value surrounded by neighbours with below-average values - a high-value outlier within a low-value neighbourhood.
 
-The category where the observation belongs to can be derived just from the signs of centred observation value and its spatial lag, but to check wheter the observation is in the category rightfully or on accident, we need to use LISA and more importantly, calculate its statistical significance. The most commonly used indicator is local Morans I, defined as:
+-   High-Low (HL): an observation with a below-average value surrounded by neighbours with above-average values - a low-value outlier within a high-value neighbourhood.
+
+The quadrant to which an observation belongs can be read directly from the signs of its centered value and its spatial lag. This classification alone does not indicate whether the observation belongs to that category because of a genuine spatial pattern or by chance. To make this distinction, local indicators of spatial association (LISA) are used together with a test of statistical significance. The most commonly used local indicator is local Moran's I, defined as
 
 $$
 I_i = \frac{z_i}{m_2} \sum_{j} w_{ij}z_j \; ; \; m_2 = \frac{\sum_i z_i^2}{n}
 $$ {#eq-local_i}
 
-where $z_i$ and $z_j$ are centered values on observation i and j, respectively, $w_{ij}$ is the spatial weight for a pair of bservation $i$ and $j$ and $m_2$ is the second moment (variance). If the reulsting value is positive, the obseravtion is either HH or LL cluster. f its negative, it belongs to Lh or HL.
+where $z_i$ and $z_j$ are centered values on observation $i$ and $j$, $w_{ij}$ is the spatial weight for a pair of observations $i$ and $j$ and $m_2$ is the second moment (variance). A positive value of $I_i$​ indicates that observation $i$ belongs to an HH or LL quadrant, whereas a negative value indicates that it belongs to an HL or LH quadrant.
 
-To identify homogenous or heterogenous clusters that didnt happen by spatially random porcess, the values of local morans I arent as important, but their statistical asignificance is. It is usually measured by p-value, with the null hypothesis that the data values are distributed randomlly and dont give any information about its surroundigs. To obatin the p-value, the obseravtion values are permuted in space (usually 999 times, esda default), and LISA is calculated for those permutations. P-value than corresponds to the proportion of permutations that accept the null hypothesis. For the statistic to be cosidred significan, usually $p<0.05$ . In pratice, we ofthen see maps colouring only those significant clusters, to which we reffer as lISA to cluster maps.
+Because a specific local Moran's I value can be obtained purely by chance, its statistical significance must be assessed before an observation is interpreted as belonging to a genuine cluster. Significance is typically expressed as a p-value under the null hypothesis that the attribute values are randomly distributed in space and carry no information about their surroundings. The p-value is commonly obtained through a permutation procedure, when the observed values are repeatedly reassigned at random to locations (usually 999 times, esda default), local Moran's I is recalculated for each permutation, and the p-value is given by the proportion of permutations producing a value as extreme as, or more extreme than, the observed one. An observation is conventionally considered a significant part of a spatial cluster if $p<0.05$ . In practice, results are often visualized as LISA cluster maps, in which only statistically significant HH, LL, HL, and LH clusters are highlighted, while non-significant observations are shown in grey.
 
 -fig lisa cluster map
 
-We see a lot of grey areas on the map as those arent statistically significant as clusters. We see very little HL and LH clusters commpared to HH and LL which is agrees with toblers first law of geogrpahy - on real data, similar values tend to be near each other.
+On LISA cluster maps of real-world data, the majority of significant clusters are typically HH or LL, compared to few HL or LH outliers, which is consistent with Tobler's first law of geography - similar values tend to occur near one another more often than not.
 
 #### Geary C
 
-Geary C is another SAC indicator. Its global version can be written as
+Geary's C is another widely used measure of spatial autocorrelation. Its global form is given by
 
 $$
 C = \frac{(n - 1)}{2 \sum_i \sum_j w_{ij}} \frac{\sum_i \sum_j w_{ij} (y_i - y_j)^2}{\sum_i (y_i - \bar{y})^2}
 $$ {#eq-global_c}
 
-where $n$ is the number of observations, $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$, respectively and $\bar{y}$ is the mean value of the whole dataset. Unlike Moran's I, which uses cross-products on the standartized values, Geary's C computes differences of raw values, which in case of very different neigbouring values, it spikes the resulting Geary C value up, making it more sensitive to appearance of negative SAC. Higher values of C indicate negative spatial correlation and values close to zero indicate positive spatial autocorrelation, so the values only have a lower bound (zero) and can reach any positive value. Values close to one indicate random configuartion of values.
+where $n$ is the number of observations, $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$, respectively and $\bar{y}$ is the mean value of the whole dataset. Unlike Moran's I, which uses cross-products on the standartized values, Geary's C computes differences of raw values, which in case of very different neigbouring values, it inflates the $C$ value, making it more sensitive to appearance of local negative SAC. $C$ is bounded below by zero, which indicates strong positive SAC, values close to one indicate random spatial pattern, and any values markably larger than one indicate negative SAC.
 
-Local Geary C, proposed by Anselin, can be written as
+The local version, Local Geary C, proposed by Anselin, is defined for each observation $i$ as:
 
 $$
 c_i = \sum_j w_{ij}(y_i - y_j)^2
 $$ {#eq-local_c}
 
-where $n$ is the number of observations, $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$, respectively and $\bar{y}$ is the mean value. High values of local $c_i$ highlight areas of abrupt changes in value, but as any LISA, its statistical significance that identifies wherther it actually matters.
+where $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$,. High values of local $c_i$ highlight areas of abrupt changes in value. As with any LISA, the magnitude of $c_i$ is less important on its own than its statistical significance, which determines whether the identified local pattern is genuine.
 
 #### Gettis Ord G
 
-Proposed by @getis1992, the global $G$ is a measure of spatial autocorrelation based on distance, unlike Morans I or Geary C, which uses contiguity weights in vast majority of cases. It can be written as
-
-$$
-G(d) = \frac{\sum_i \sum_j w_{ij}(d) y_i y_j}{\sum_i \sum_j y_i y_j}
-$$ {#eq-global_g}
-
-where $w_{ij}(d)$ is the binary weight between observation $i$ and $j$ based on a distance band (1 if within the distance band, 0 if not). The weights don't have to be strictly binary, but usually they are. $G$ measures the degree of positive spatial autocorrelation. The local version of $G$ can be defined in two ways, $G_i$ doenst include observation's own value, but $G_i^*$ does, therefore
+Proposed by @getis1992, the local $G$ is an indicator of positive spatial autocorrelation. It can be defined in two ways, $G_i$ excludes observation's $i$ own value, wheres $G_i^*$ includes it:
 
 $$ G_i = \frac{\sum_{j \neq i} w_{ij} x_j}{\sum_{j \neq i} x_j},G_i^* = \frac{\sum_j w_{ij} x_j}{\sum_j x_j} $$ {#eq-local_g}
 
-$G_i$ and $G_i^*$ help identify hot spots (areas with high values) and cold spots (
+where $w_{ij}$ is the weight between observation $i$ and $j$. $G$ captures the overall degree of positive spatial autocorrelation, where high $G$ values are associated with hot spots (areas with homogenously high values) and low values are associated with cold spots (areas with homogenously low values).
+
+Getis-Ord G is complementary to local Moran's I. Local Moran's I primarily distinguishes between spatial clusters (HH/LL) and spatial outliers (HL/LH), but a positive value of local Moran's I does not by itself reveal whether the underlying cluster consists of high or low values. $G$ is specifically designed to make this distinction, identifying whether a concentration of similar values forms a hot spot or a cold spot. However, because $G_i$ Gi​ and $G_i$​ are computed from sums of raw, non-negative attribute values rather than centered or standardized ones, they cannot detect negative spatial autocorrelation.
 
 ### Regionalization
 
@@ -132,63 +130,79 @@ where
 
 $$W = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \in h} d_{ij}, \qquad B = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \notin h} d_{ij}$$ {#eq-wb_explained}
 
-$W$ serves as a loss function, the goal is to minimize it. Some methods explicitly use $W$ as the clustering criterion (SCHC using Ward's linkage) whereas others use other metrics to approximate the goal.
+$W$ acts as a loss function, the goal of clustering is to minimize it. Some methods explicitly use $W$ as the clustering criterion (e. g. SCHC using Ward's linkage) whereas other methods use different metrics to approximate the goal.
 
-This chapter will serve as an overview of widely used methods and in the experimental part, we will test the robustness to polygonal coverage violations of two methods - agglomerative clustering/SCHC and SKATER.
+This chapter will serve as an overview of widely used methods and in the experimental part, we will test the robustness to polygonal coverage violations of two methods - SCHC and SKATER.
 
 #### Agglomerative clustering/SCHC
 
-Spatially constrained hierarchical clustering is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage. By distance, we mean the euclidean one as it is used in vast majority of applications and also required for the use of Ward's linkage, which is preferred for regionalization and will be further described in this chapter. Other linkages are single linkage, using the minimum distance between clusters, complete linkage using the maximum distance and average linkage using the mean distance.
+Spatially constrained hierarchical clustering is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage criterion. In vast majority of applications, dissimilarity is measured using Euclidean distance, which also required for the use of Ward's linkage, preferred for regionalization and will be further described in this chapter. Other common linkages include single linkage (minimum distance between any pair of observations in the two clusters), complete linkage (maximum distance), and average linkage (mean distance).
 
-The dissimilarity is denoted in dissimilarity matrix $D$, which is initially $n×n$ as each observation starts as its own cluster, and each element $d_{ij}$ represents the dissimilarity between each pair of clusters (or observations). The algorithm then merges the two clusters/observations, that have the smallest dissimilarity (smallest value from $D$) under the contiguity constraint. $D$ is then updated using an updating formula, which computes the dissimilarities between the new cluster $C$ and a cluster $P$, reducing both dimensions of $D$ by 1 in each iteration.
+The dissimilarity is denoted in dissimilarity matrix $D$, which is initially $n \times n$ as each observation starts as its own cluster. Each element $d_{ij}$ represents the dissimilarity between each pair of clusters (or single observations). At each step, the algorithm merges the two clusters/observations, that have the smallest dissimilarity (smallest value from $D$) under the contiguity constraint. After each merge, $D$ is updated using an updating formula, that computes the dissimilarities between the new cluster $C$ and a cluster $P$, reducing both dimensions of $D$ by one in each iteration.
 
-Ward's method, developed by @ward1963, explicitly tries to minimize the within-cluster dissimilarity (variance) defined trough the sum of squared errors ($WSS$). The input structure to use Ward's method is a $n×p$ matrix $X$, where $n$ is the number of observations, $p$ is the number of variable and each element represents the (standartized) value of each variable for each observation. $WSS$ can be then formally defined as:
+Ward's method, developed by @ward1963, explicitly minimizes the within-cluster dissimilarity (variance) defined trough the sum of squared errors ($WSS$). The input structure to use Ward's method is a $n \times p$ matrix $X$, where $n$ is the number of observations, $p$ is the number of variable and each element represents the (standartized) value of each variable for each observation. $WSS$ can be then formally defined as:
 
 $$WSS = \sum_{i \in C} (x_i - \bar{x}_C)^2$$ {#eq-wss_schc}
 
-where $x_i$ is a single row of $X$ (the vector of attributes for observation $i$) and $\bar{x}_C$ is the centroid of all observations in cluster $C$. Intuitively, the overall $WSS$ increases when we merge clusters, so the goal is to minimize this increase. This actually turns out to be merging clusters/observations which's centroids are closest to each other based on a dissimilarity matrix $D$. Ward's method expresses the dissimilarity trough the square of the Euclidean distance, therefore the dissimilarity between clusters $A$ and $B$:
+where $x_i$ is a single row of $X$ (the vector of attributes for observation $i$) and $\bar{x}_C$ is the centroid of all observations in cluster $C$. Intuitively, the overall $WSS$ increases when we merge two clusters, so the goal at each step is to choose the merge that increases $WSS$ by the smallest possible amount. This turns out to be equivalent to merging the two clusters whose centroids are closest based on a dissimilarity matrix $D$. Ward's method expresses the dissimilarity trough the square of the Euclidean distance, therefore the dissimilarity between clusters is defined as
 
 $$d^2_{AB} = \frac{2n_A n_B}{n_A + n_B} \| \bar{x}_A - \bar{x}_B \|^2$$ {#eq-dissimilarity}
 
-The updating formula to compute the dissimilarities between the new cluster $C$ and a point (cluster) $P$ after merging clusters $A$ and $B$ is defined as:
+After two clusters $A$ and $B$ are merged into a new cluster $C$, the dissimilarities between $C$ and every other cluster $P$ can be computed without recalculating centroids, using the Lance-Williams updating formula:
 
 $$d^2_{PC} = \frac{n_A + n_P}{n_C + n_P} d^2_{PA} + \frac{n_B + n_P}{n_C + n_P} d^2_{PB} - \frac{n_P}{n_C + n_P} d^2_{AB}$$ {#eq-dissimilarity-updating}
 
-As mentioned above, the clusters/observations can be only merged under the contiguity constraint, which is denoted in spatial weight matrix $W$, meaning that observations $i$ and $j$ can be merged only if $w_{ij} \neq 0$. AFter the merge, $W$ needs to be updated. If $i$ and $j$ were merged into a new cluster $C$, $i$-th and $j$-th row and column will be replaced by $C$. The relationship between $C$ and the rest of the clusters $P$ will be denoted following $w_{PC}= 1$ if $w_{iP} \neq 0 \lor w_{jP} \neq 0$.
+As mentioned above, the clusters/observations can be only merged under the contiguity constraint, which is denoted in spatial weights matrix $W$. For this thesis, we will assume a binary $W$, meaning that observations $i$ and $j$ can be merged only if $w_{ij}-1$. After the merge, $W$ needs to be updated. If $i$ and $j$ were merged into a new cluster $C$, $i$-th and $j$-th row and column will be replaced by $C$. The relationship between $C$ and the rest of the clusters $P$ will be set to $w_{PC}= 1$ if $w_{iP}=1 \lor w_{jP}=1$, inheriting all the neighbours of both $i$ and $j$.
 
-Common pratice is to define the number of clusters or number of regions in case of regionalization. This parameter stops the the hierarchical tree building called a dendrogram (see fig. x) but software tools like sklearn allow to built the whole tree even though it wont be necessary for the clustering.
+In practice, the number of clusters (regions) $k$ is fixed in advance, and the merging process stops once this number is reached. This corresponds to "cutting" the hierarchical tree, or dendrogram, at the appropriate height.
 
--dendrogram
+-fig dendrogram
 
 -definovany jen pro 1 componentu?
 
--nevratny
+-nevratny/greedy algorithm
 
 #### SKATER
 
-Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method but unlike SCHC, it is not agglomerative, but divisive. It is based on pruning a minimum spanning tree (MST). MST is a graph structure, defined as subset of edges that connect all nodes of the graph with minimum possible total edge weight.
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method. Unlike SCHC, it is not agglomerative, but divisive. It is based on pruning a minimum spanning tree (MST) - a subgraph that connects all nodes of a graph using the subset of edges with the minimum possible total edge weight, without forming any cycles.
 
-MST for the purpose of SKATER algorithm is a subset of edges from contiguity spatial weights graph (see def in chapter x). The weights are assigned to each edge usually based on their Euclidean distance in attribute space, therefore:
+For SKATER, MST is a subset of edges from contiguity spatial weights graph (see definiton in @sec-contiguity). The weights are assigned to each $(i,j)$ edge based on the dissimilarity between the attribute vectors of observations $i$ and $j$, typically their squared Euclidean distance in attribute space:
 
 $$d(i, j) = d(x_i, x_j) = \sum_{l=1}^{n} (\mathbf{x}_{il} - \mathbf{x}_{jl})^2$$ {#eq-euclidean_distance_skater}
 
-where $x_i$, $x_j$ are attribute vectors of observations $i$ and $j$, which is understood to be the dissimilarity.
+where $x_i$, $x_j$ are attribute vectors of observations $i$ and $j$.
 
-The initial MST has exactly $n-1$ edges. All observation are considered to be in one region. The MST is pruned by removing an edge which increases the between-cluster dissimilarity the most. This is accessed trough calculating the sum of squared devations (SSD) calculated as ... for each subtree and subtrating them from the SSD of the whole tree. If we are about to split a tree into subtree A and B, the increase of between cluster dissimilarity is calculated as
+The initial MST has exactly $n-1$ edges. All observations are considered to be in one region. The MST is pruned by removing an edge which increases the between-cluster dissimilarity the most. This is accessed trough calculating the sum of squared devations (SSD) calculated as
+
+$$SSD_T = \sum_{i \in T} (x_i - \bar{x}_T)^2$$
+
+where $\bar{x}_T$ is the centroid of the attribute values of all observations in $T$. Removing an edge splits a tree $T$ into two subtrees $A$ and $B$. The resulting reduction in within-cluster dissimilarity is given by
 
 $$\Delta SSD=SSD_T-(SSD_A+SSD_B)$$ {#eq-ssd_skater}
 
-and needs to be the largest.
+At each step, SKATER removes the edge that maximizes $\Delta SSD$, i.e. the split that most reduces the combined within-cluster dissimilarity of the two resulting subtrees. This process is repeated, recursively splitting the resulting subtrees, until the desired number of regions $k$ is reached.
+
+-jeste neni konec
+
+#### AZP
+
+#### REDCAP
+
+#### Max p-regions
 
 ## Topology in geography
 
-Topology is a mathematical discipline that “studies properties of spaces that are invariant to continuous deformation” (@waterloo_topology). In geographic context, it means focusing strictly on the spatial relationships between features, such as connectivity, adjacency, and containment (citace), rather than their absolute geometric shape, distance, or magnitude. The discipline was formally established in the early 20th century, however its roots trace back to Leonhard Euler’s solution to the Seven Bridges of Königsberg problem (@euler1741solutio). The objective of the problem was to cross every bridge in the city exactly once and return to the starting point. The physical distances and exact shapes of the landmasses were entirely irrelevant to the solution, the outcome depended solely on knowing which bridges connected which landmasses. By abstracting the city into a graph (see definition in chap. xx) while preserving the information about the connectivity of the landmasses, he was able to solve the problem.
+Topology is a mathematical discipline that “studies properties of spaces that are invariant to continuous deformation” [@waterloo_topology]. In geographic context, it means focusing strictly on the spatial relationships between features, such as connectivity, adjacency, and containment (citace), rather than their absolute geometric shape, distance, or magnitude.
 
--fig konigsberg bridges a graph
+Topological relationships are essential in numerous geographical disciplines, such as landscape ecology using overlay analysis, hydrology, geography of transport using the network analysis/line adjacency, cartography and spatial statistics (topologies of borders) [@papadimitriou_geo-topology_2023]. Probably one the most important connections between topology and geography is the Four Colour Theorem, proposed by Francis Guthrie 1852. It states that any planar map consisting of polygons can be coloured using only four colours without any pair of neigbouring polygons sharing the same colour. The theorem was proven more than a hundred years later by @appel1977fourcolor1 and it relied entirely on topological principles, specifically, polygonal adjacency.
 
-Probably one the most important connections between topology and geography is the Four Colour Theorem, proposed by Francis Guthrie 1852. It states that any planar map consisting of polygons can be coloured using only four colours without any pair of neigbouring polygons sharing the same colour. The theorem was proven more than a hundred years later by @appel1977fourcolor1 and it relied entirely on topological principles, specifically, polygonal adjacency. Similarly to the Königsberg bridges, solving the problem required abstraction into a graph, a mathematical structure frequently used to describe spatial and topological relationships.
+<!-- The discipline was formally established in the early 20th century, however its roots trace back to Leonhard Euler’s solution to the Seven Bridges of Königsberg problem (@euler1741solutio). The objective of the problem was to cross every bridge in the city exactly once and return to the starting point. The physical distances and exact shapes of the landmasses were entirely irrelevant to the solution, the outcome depended solely on knowing which bridges connected which landmasses. By abstracting the city into a graph (see definition in chap. xx) while preserving the information about the connectivity of the landmasses, he was able to solve the problem. --->
 
-The formal study topological relationships is rooted in point-set topology, also known as general topology, as it is the foundation to many other related disciplines. It relies on the concepts set theory, introduced by @cantor1874, like set operations (e. g. intersection, union, complement), as well as the fundamental notions of subsets, open sets, and neighborhoods. @hausdorff1914grundzuge formalized topological space in his book on set theory, introducing the foundations of point-set topology.
+The formal study topological relationships is rooted in point-set topology, also known as general topology, as it is the foundation to many other related disciplines. It relies on the concepts set theory, introduced by @cantor1874, like set operations (e. g. intersection, union, complement), as well as the fundamental notions of subsets, open sets, and neighborhoods. Furthermore, point-set topology concepts like interior, boundary and exterior, introduced by @hausdorff1914grundzuge, are the foundation for topological models, used in modern GIS to formalize topological relationships.
+
+This chapter shall explore..
+
+\<!--
 
 A topological space is a pair $(X, \tau)$, where $X$ is a set of points and $\tau$ is a collection of subsets of $X$ (the topology). $\tau$ must satisfy the following axioms:
 
@@ -199,25 +213,29 @@ A topological space is a pair $(X, \tau)$, where $X$ is a set of points and $\ta
 Based on the definition of topological space, @hausdorff1914grundzuge formally defined the interior, boundary and exterior of a set. These three topological properties are the core of topological models used in spatial analysis. Given a set $Y$ in topological space $(X, tau)$:
 
 -   interior (doplnim)
+
 -   boundary
--   exterior
 
--Identifying these relationships is essential in numerous geographical disciplines, such as landscape ecology, hydrology, geography of transport, cartography and spatial statistics (@papadimitriou_geo-topology_2023).
+-   exterior --\>
 
-<!--This phenomena is used across other fields. Among the most notable applications of graphs on topological relationships, Kirchhoff (1847) represented an electrical circuit as a graph, implicitly using tree structures (see chapter xx) to identify independent circuit equations. A tree in the context of graph theory was later formalized by Cayley (1857), who used graphs to represent chemical structures. -->
+-   tohle ma byt zakomentovany ale nejde mi to
+
+<!--This phenomena is used across other fields. Among the most notable applications of graphs on topological relationships, Kirchhoff (1847) represented an electrical circuit as a graph, implicitly using tree structures (see chapter xx) to identify independent circuit equations. A tree in the context of graph theory was later formalized by Cayley (1857), who used graphs to represent chemical structures.-->
 
 ### Topological models
 
-During the 1980s, terms for spatial relations were mentioned in literature, however, they lacked formal definitions and were mostly treated as axiomatic (@egenhoferPointsetTopologicalSpatial1991). The first rigorous framework for topological relationships was the *4-Intersection Model* (*4-IM*) developed by @egenhoferPointsetTopologicalSpatial1991. It applied interior and boundary definitions from point set topology to a geospatial context. The *4-IM* served as the predecessor to the *Dimensionally Extended 9-Intersection Model* (*DE9-IM*) (@clementiniSmallSetFormal1993), which is now the standard adopted by the *Open Geospatial Consorcium* (*OGC*). Expanding the *4-IM*, it is based on a 3×3 matrix of all possible intersections between interior, boundary and exterior of two geometries (point, line or polygon) and further describes the dimension of those intersections:
+During the 1980s, terms for spatial relations were mentioned in literature, however, they lacked formal definitions and were mostly treated as axiomatic [@egenhoferPointsetTopologicalSpatial1991]. The first rigorous framework for topological relationships was the *4-Intersection Model* (*4-IM*) developed by @egenhoferPointsetTopologicalSpatial1991. It applied interior and boundary definitions from point set topology to a geospatial context. The *4-IM* served as the predecessor to the *Dimensionally Extended 9-Intersection Model* (*DE9-IM*) [@clementiniSmallSetFormal1993], which is now the standard adopted by the *Open Geospatial Consorcium* (*OGC*). Expanding the *4-IM*, it is based on a 3×3 matrix of all possible intersections between interior, boundary and exterior of two geometries (point, line or polygon) and further describes the dimension of those intersections:
+
+$$\text{DE-9IM}(a,b) = \begin{bmatrix} \dim(a^\circ \cap b^\circ) & \dim(a^\circ \cap \partial b) & \dim(a^\circ \cap b^-) \\ \dim(\partial a \cap b^\circ) & \dim(\partial a \cap \partial b) & \dim(\partial a \cap b^-) \\ \dim(a^- \cap b^\circ) & \dim(a^- \cap \partial b) & \dim(a^- \cap b^-) \end{bmatrix}$$ {#eq-de9im}
+
+where...
 
 -   False (-1) if there is no intersection,
 -   0 if the intersection is a point,
 -   1 if the intersection is a line,
 -   2 if the intersection is a polygon.
 
--tab de9im matrix, nebo fig?
-
-In most use cases, non-empty intersections (0, 1 or 2) can be universally treated as $True$ when the result is invariant to the intersection dimension. However, for defining contiguities the dimension of the intersection is required (see chapt. xx). Specific value combinations in the matrix have standard names, which are referred to as spatial predicates. The *C++* library *GEOS* - a core dependency of many libraries (e. g. *Shapely*, *Geopandas*), databases (e. g. *PostGIS*), and applications (e. g. *QGIS*) - recognizes 9 spatial predicates (see tab @tab-spatial_predicates) @geos. For computational purposes, the matrix is often flattened into a 9-character DE-9IM string.
+In most use cases, non-empty intersections (0, 1 or 2) can be universally treated as $True$ when the result is invariant to the intersection dimension. However, for defining contiguities the dimension of the intersection is required as discussed in @sec-contiguity. Specific value combinations in the matrix have standard names, which are referred to as spatial predicates. The *C++* library *GEOS* - a core dependency of many libraries (e. g. *Shapely*, *Geopandas*), databases (e. g. *PostGIS*), and applications (e. g. *QGIS*) - recognizes 9 spatial predicates (see @tab-spatial_predicates) @geos. For computational purposes, the matrix is often flattened into a 9-character DE-9IM string.
 
 +-------------------+-------------------+-------------+----------------------------------------+
 | Spatial predicate | DE-9IM string     | Description | Illustration?                          |
@@ -248,15 +266,15 @@ In most use cases, non-empty intersections (0, 1 or 2) can be universally treate
 
 Software libraries implement these predicates alongside additional ones as boolean functions, such as modified formulations (e. g. `contains_properly` in *Shapely* library) or inverse relationships (e. g. `covered_by` in *Shapely*). Custom spatial queries can be formalized by defining the flattened DE9-IM string (e. g. `relate` in *Shapely*, `ST_relate` in *PostGIS*). Topological relationships derived from *DE-9IM* are the underlying framework for many spatial operations including overlay analysis, contiguity detection, and topology validation.
 
-## Topological validity and polygonal coverage
+### Topological validity and polygonal coverage
 
-Spatial data often suffers from errors from a variety of sources. These inaccuracies are typically introduced during manual vectorization or data entry, data transfer, geometric editing operations (such as simplification or reprojection), or the integration of heterogeneous datasets of varying ages (@spatialeye_topology, @gisgeography_topology, @servigne2000).
+Spatial data often suffers from errors from a variety of sources. These inaccuracies are typically introduced during manual vectorization or data entry, data transfer, geometric editing operations (such as simplification or reprojection), or the integration of heterogeneous datasets of varying ages [@spatialeye_topology, @gisgeography_topology, @servigne2000].
 
 @servigne2000 categorizes spatial consistency errors into three primary types:
 
--   Structural errors: Arising when the chosen data structure cannot adequately accommodate the data model.
--   Geometric errors: Conceptually invalid geometry (e. g. self-intersecting polygons).
--   Topo-semantic errors: Occurring when the geometric representation violates real-world logical constraints (e.g., a single building footprint incorrectly intersecting two distinct parcels).
+-   **Structural errors:** Arising when the chosen data structure cannot adequately accommodate the data model.
+-   **Geometric errors:** Conceptually invalid geometry (e. g. self-intersecting polygons).
+-   **Topo-semantic errors:** Occurring when the geometric representation violates real-world logical constraints (e.g., a single building footprint incorrectly intersecting two distinct parcels).
 
 Geometric and topo-semantic errors are particularly problematic when detecting topological relationships, as they are not immediately noticable. The most commonly used data structures in modern GIS are "spaghetti" models (e.g., GeoJSON, Shapefile, Parquet, and GeoPackage). These models store each geometry as an isolated record with no information about their mutual relationships, therefore they need to be derived from the geometry (vertices). In presence of geometrical inaccuracies, accurate detection of topological relationships is impossible.
 
@@ -269,64 +287,84 @@ Polygonal coverage, or also planar enforcement, is a specific case of these rule
 
 -fig topology errors slivers, gaps
 
--Geoplanar also mentions non-planar touches and edges, which by the general definition meet polygonal coverage (planar enforcement) requirements, but geometrically, they would violate it and contiguity detection would be compromised. Enforcing valid polygonal coverage ensures accurate spatial analysis and improves cartographic visualization.
+Geoplanar also adresses these non-planar touches and edges as planar enforcement violation as in their presence, contiguity detection is compromised. For Rook contiguity, two polygons are considered a neighbour if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping boundaries, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. Similarly with Queen contiguity - two polygons are considered a neighbour if they share a vertex. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data.
 
-The contiguity definitions seem intuitive, however, the definitions of sharing an edge or sharing a vertex are incomplete. In libpysal, sharing an edge is implemented as sharing two consecutive vertices and similarly, sharing a vertex means that both polygons have a vertex of the same coordinates. This can become problematic in case of non-planar edges and non-planar touches (see Fig.) (citace geoplanar). In situations like these, Queen contiguity wont be detected as the polygons are not planar enforced.
+-fig non planar touches/edges
 
-<!-- where two polygons are considered a neighbour if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping edges, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data. -->
+<!-- Various software tools can evaluate the datasets for topology violations. Shapely, python wrapper for the GEOS library, implements functions for checking individual geometric validity rather than global topology. JTS Topology Suite (JTS), an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like QGIS and ArcGIS Pro evaluate the selected topology rules (i. e. for polygonal coverage must not overlap and must not have gaps) and visually highlight every error on the map. While JTS, QGIS, and ArcGIS Pro validate topology by checking individual geometries, Mapshaper temporarily converts the spaghetti model into an explicit topological data structure. Instead of storing independent geometries in rows, Mapshaper decomposes a polygonal dataset into an arc-node graph: creating edges (arcs) for boundaries and nodes where three or more polygons intersect. Polygons are then defined mathematically through sequences of these shared arcs, eliminating coordinate redundancy. In this explicit topological structure, the information detailing which polygons neighbor each other is inherently stored within the data model itself. -->
 
--Libpysal implements Queen and Rook contiguity, alongside fuzzy contiguity, which serves as more flexible
+-identifying a Fixing errors, jts, geoplanar + neco malo qgis/arcgis a mapshaper
 
-Various software tools can evaluate the datasets for topology violations. *Shapely*, python wrapper for the *GEOS* library, implements functions for checking individual geometric validity rather than global topology. *JTS Topology Suite* (*JTS*), an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like *QGIS* and *ArcGIS Pro* evaluate the selected topology rules (i. e. for polygonal coverage `must not overlap` and `must not have gaps`) and visually highlight every error on the map.
+-fuzzy contiguity
 
-While *JTS*, *QGIS*, and *ArcGIS* Pro validate topology by checking individual geometries, Mapshaper temporarily converts the spaghetti model into an explicit topological data structure. Instead of storing independent geometries in rows, Mapshaper decomposes a polygonal dataset into an arc-node graph: creating edges (arcs) for boundaries and nodes where three or more polygons intersect. Polygons are then defined mathematically through sequences of these shared arcs, eliminating coordinate redundancy. In this explicit topological structure, the information detailing which polygons neighbor each other is inherently stored within the data model itself.
-
--Fixing errors can be either done (semi)automatically or by hand, involving a snapping treshold... a zapomnela jsem na geoplanar :(
+-diagram pro premka
 
 -even though such tools exist, topological errors still occur, a presne proto pisu tuhle praci
 
+## Research gap
+
 # Methodology
 
-## Simulated data
+## Grid generation
 
-Three sizes of polygonal datasets were generated (n = 25, 100, and 400). To vary the average number of neighbours, three lattice types (square, pentagonal, and hexagonal) were applied to each size, yielding 9 distinct spatial configurations (fig x).
+To test robustness of spatial statistics under supervised conditions, three lattice geometries were considered - square, pentagonal (A5) and hexagonal (H3). Lattice geometry influences the number of average number of neigbours per observation. All three geometries were generated in three different dataset sizes - $n=25$ (5×5 grid), $n=100$ (10×10 grid), and $n=400$ (20×20 grid).
 
 ![Simulated data spatial configurations.](figures/structures.png){#fig-structures fig-align="center" width="60%"}
 
-### Spatial autocorrelation
+## Synthetic region delineation
 
-Attribute values were generated trough a pure spatial process using a spatial autoregressive (SAR) model, similarly to @floraxImpactsMisspecifiedSpatial1995, calculated by the following equation for each of the nine spatial configurations:
-
-$$y=(I-\rho W)^{-1} \epsilon$$
-
-where $y$ is the resulting vector of generated attribute values, $I$ is a identity matrix, $\rho$ is the spatial autoregressive parameter, $W$ is Rook contiguity spatial weight matrix derived from each spatial configuration and $\epsilon$ is random normal error vector. $\rho$ was varied from -0.9 to 0.9 in increments of 0.1, with 10 iterations of $\epsilon$ per $\rho$ value, see examples in Fig. x. This produced 190 unique value datasets per spatial structure representing a wide spectrum differently spatially autocorrelated datasets.
-
-![Examples of generated SAR data.](figures/moran_extremes.png){#fig-sar_examples fig-align="center" width="80%"}
-
-### Regionalization
-
-First, regions were predefined on all three lattice types at two dataset sizes, $n=100$ and $n=400$. For each of those six spatial configurations, 5 polygons were randomly selected as seeds, which grow into spatially connected regions [@guo2023], repeated 10 times, generating 10 zonations for each spatial configuration. For $n=100$, the number of minimum polygons is set 12 and for $n=400$ to 48.
-
-Afterwards, the data was generated to exhibit strict stratified heterogeneity, meaning that true regression coefficients are constant within each predefined region but differ across regions. The underlying data-generating process follows a simple linear model used in @guo2023:
-
-$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \epsilon$$
-
-where the independent variables are drawn i.i.d. from a uniform distribution $x_1, x_2 \sim \mathcal{U}[0, 1)$ and the error term $\epsilon$ is from is from normal distribution with mean 0 and variance $\sigma^2$, therefore $\epsilon \sim \mathcal{N}(0, \sigma^2)$. $\sigma=0.1$ for all simulations.
-
-For each of the 5 regions, covariate coefficients $\beta_1, \beta_2$ take different values from $\{-2,-1,0,1,2\}$ and $\beta_0=0$ in all regions. For each zonation, 5 attribute values were generated by this process, which were then fitted into regionalization models.
-
-## Real data
+Regions were predefined on all three geometries at two dataset sizes: $n=100$ and $n=400$, giving six spatial configurations in total. For each spatial configuration, five polygons were randomly selected as seeds, which grow into spatially connected regions, folowing the procedure of @guo2023. The process was repeated 10 times per configuration, producing 10 distinct zonations. The minimum region size was set to 12 polygons for $n = 100$ and 48 polygons for $n = 400$. These zonations are utilized in contiguity corruption parametrization and they provide the basis for generating synthetic attribute data for the regionalization experiment.
 
 ## Contiguity corruption
 
-To simulate erroneous topology, controlled adjacency corruptions are applied to a set of topologically correct polygons. These corruptions consist of removing edges from the $W$ reflecting Rook contiguity of polygons. Missing adjacencies are spatially distributed in three ways:
+To simulate the effect of topological errors on spatial analysis, a controlled procedure for corrupting the Rook contiguity spatial weights matrix $W$ was developed. Starting from a topologically valid graph, edges (i.e., adjacency relationships between polygons) are iteratively removed to progressively degrade the spatial neighbourhood structure. Missing adjacencies are distributed spatially according to three distinct patterns:
 
--   Randomly, where adjacency relations are removed uniformly at random across the entire graph. Any edge can be deleted.
--   On region borders, simulating errors arising from the integration of multiple spatial datasets. Any two of the predefined regions can be deleted.
--   Locally, where adjacencies are removed within a spatially contiguous subregion, representing localised human digitisation or editing errors. One of predefined regions is selected and edges within it as well as those who only have one node in the region, can be deleted.
+-   **Randomly:** Edges are removed uniformly at random across the entire graph, representing spatially unpatterned errors with no particular spatial structure.
+-   **Region borders:** Only edges crossing the boundary between two predefined regions can be removed, simulating errors arising from the integration of independently digitised datasets.
+-   **Local:** Edges within or immediately adjacent to a single predefined region are targeted, representing localised digitisation or editing errors.
 
-![Deletable edges: random (left), region borders (center), local (right)](figures/cor_method.png){#fig-cor_method fig-align="center" width="80%"}
+![Deletable edges (highlighted in red): random (left), region borders (center), local (right)](figures/cor_method.png){#fig-cor_method fig-align="center" width="80%"}
 
-Since spatial autocorrelation measures aren't explicitely defined for observations with no neighbours, reffered to as isolates, their occurence had to be prevented while corrupting $W$. What this means is that if at least one of two observations connected by an edge has a node degree of 1 (has only 1 neigbour), the edge cannot be deleted. Those have to be subtracted from the deletable edges subgraph.
+Since spatial autocorrelation measures aren't explicitely defined for observations with no neighbours (isolates), their occurence has to be prevented while corrupting $W$. If at least one of two observations connected by an edge has a node degree of 1 (has only 1 neigbour), the edge is not eligible for removal. Similarly, regionalization algorithms require a single connected component, edges whose removal would disconnect the graph, referred to as bridges, cannot be removed.
 
-In similar fashion, regionalization techniques are not defined for if $W$ has more than one component. Therefore edges known as bridges, after whose deletion the graph would split into more components need to be kept. therefore subtracted from deletable edges subgraph. In case the edges are removed randomly, it will end up in MST.
+-maximally corrupted graph no isolates/mst
+
+At each iteration, the set of removable edges is computed as the intersection of the method-eligible and constraint-eligible subgraphs. One edge is removed, the constraint set is recomputed, and the process repeats until no further deletions are possible. From this sequence, 19 graphs were selected to represent a linear progression of missing edges, culminating in the maximally corrupted graph. Each sequence is repeated 10 times, yielding 190 corrupted graphs per corruption method. For the region borders and local corruption methods, each of the 10 repetitions is paired with a distinct zonation.
+
+To avoid circularity in the regionalization evaluation, any corrupted graph derived from a given zonation is excluded from experiments if the input data were generated based on the same zonation.
+
+## Spatial autocorrelation workflow
+
+### Synthetic data
+
+Attribute values were generated through a pure spatial autoregressive (SAR) process, following the procedure in @floraxImpactsMisspecifiedSpatial1995:
+
+$$y=(I-\rho W)^{-1} \epsilon$$
+
+where $y$ is the resulting vector of generated attribute values, $I$ is a identity matrix, $\rho$ is the spatial autoregressive parameter, $W$ is row-standartized Rook contiguity spatial weight matrix derived from each spatial configuration and $\epsilon$ is random normal error vector. The parameter $\rho$ was varied from -0.9 to 0.9 in increments of 0.1, with 10 independent draws of $\epsilon$ per value of $\rho$. This produced 190 unique value datasets per spatial configuration representing a wide spectrum differently spatially autocorrelated datasets (see examples in @fig-sar_examples).
+
+![Examples of generated SAR data.](figures/moran_extremes.png){#fig-sar_examples fig-align="center" width="80%"}
+
+### Real data
+
+### Computation
+
+### Evaluation
+
+## Regionalization workflow
+
+### Synthetic data
+
+Tgenerated to exhibit strict stratified heterogeneity, meaning that true regression coefficients are constant within each predefined region but differ across regions. The underlying data-generating process follows a simple linear regression model used in @guo2023:
+
+$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \epsilon$$
+
+where $x_1, x_2 \sim \mathcal{U}[0, 1)$ are independent covariates drawn i.i.d. from a uniform distribution, $\epsilon \sim \mathcal{N}(0, \sigma^2)$ is a random error term with $\sigma = 0.1$, and $\beta_0$, $\beta_1$, $\beta_2$ are region-specific regression coefficients. Within each of the five predefined regions, $\beta_1$ and $\beta_2$ take distinct values drawn from $\{-2, -1, 0, 1, 2\}$, while $\beta_0 = 0$ in all regions.
+
+For each zonation, five independent sets of attribute values were generated following this process and subsequently used as input to the regionalization algorithms.
+
+### Real data
+
+### Computation
+
+### Evaluation
