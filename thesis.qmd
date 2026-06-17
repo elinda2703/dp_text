@@ -136,7 +136,9 @@ This chapter will serve as an overview of widely used methods and in the experim
 
 #### Agglomerative clustering/SCHC
 
-Spatially constrained hierarchical clustering is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage criterion. In vast majority of applications, dissimilarity is measured using Euclidean distance, which also required for the use of Ward's linkage, preferred for regionalization and will be further described in this chapter. Other common linkages include single linkage (minimum distance between any pair of observations in the two clusters), complete linkage (maximum distance), and average linkage (mean distance).
+Spatially constrained hierarchical clustering is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. It is a greedy algorithm, therefore once the observations are merged, they cannot be split in another iteration.
+
+Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage criterion. In vast majority of applications, dissimilarity is measured using Euclidean distance, which also required for the use of Ward's linkage, preferred for regionalization and will be further described in this chapter. Other common linkages include single linkage (minimum distance between any pair of observations in the two clusters), complete linkage (maximum distance), and average linkage (mean distance).
 
 The dissimilarity is denoted in dissimilarity matrix $D$, which is initially $n \times n$ as each observation starts as its own cluster. Each element $d_{ij}$ represents the dissimilarity between each pair of clusters (or single observations). At each step, the algorithm merges the two clusters/observations, that have the smallest dissimilarity (smallest value from $D$) under the contiguity constraint. After each merge, $D$ is updated using an updating formula, that computes the dissimilarities between the new cluster $C$ and a cluster $P$, reducing both dimensions of $D$ by one in each iteration.
 
@@ -160,11 +162,11 @@ In practice, the number of clusters (regions) $k$ is fixed in advance, and the m
 
 -definovany jen pro 1 componentu?
 
--nevratny/greedy algorithm
-
 #### SKATER
 
 Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method. Unlike SCHC, it is not agglomerative, but divisive. It is based on pruning a minimum spanning tree (MST) - a subgraph that connects all nodes of a graph using the subset of edges with the minimum possible total edge weight, without forming any cycles.
+
+-mst partitioning fig
 
 For SKATER, MST is a subset of edges from contiguity spatial weights graph (see definiton in @sec-contiguity). The weights are assigned to each $(i,j)$ edge based on the dissimilarity between the attribute vectors of observations $i$ and $j$, typically their squared Euclidean distance in attribute space:
 
@@ -172,7 +174,7 @@ $$d(i, j) = d(x_i, x_j) = \sum_{l=1}^{n} (\mathbf{x}_{il} - \mathbf{x}_{jl})^2$$
 
 where $x_i$, $x_j$ are attribute vectors of observations $i$ and $j$.
 
-The initial MST has exactly $n-1$ edges. All observations are considered to be in one region. The MST is pruned by removing an edge which increases the between-cluster dissimilarity the most. This is accessed trough calculating the sum of squared devations (SSD) calculated as
+All observations are considered to be in one region and they are connected by the initial MST, which has exactly $n-1$ edges. The MST is pruned by removing an edge which increases the between-cluster dissimilarity the most. This is accessed trough calculating the sum of squared deviations ($SSD_T$) calculated as
 
 $$SSD_T = \sum_{i \in T} (x_i - \bar{x}_T)^2$$
 
@@ -181,8 +183,6 @@ where $\bar{x}_T$ is the centroid of the attribute values of all observations in
 $$\Delta SSD=SSD_T-(SSD_A+SSD_B)$$ {#eq-ssd_skater}
 
 At each step, SKATER removes the edge that maximizes $\Delta SSD$, i.e. the split that most reduces the combined within-cluster dissimilarity of the two resulting subtrees. This process is repeated, recursively splitting the resulting subtrees, until the desired number of regions $k$ is reached.
-
--jeste neni konec
 
 #### AZP
 
@@ -202,23 +202,9 @@ The formal study topological relationships is rooted in point-set topology, also
 
 This chapter shall explore..
 
-\<!--
+<!--A topological space is a pair $(X, \tau)$, where $X$ is a set of points and $\tau$ is a collection of subsets of $X$ (the topology). $\tau$ must satisfy the following axioms: 1. Any union of elements of $\tau$ belongs to $\tau$. 2. Any finite intersection of elements of $\tau$ belongs to $\tau$.$X$ and $\emptyset$ belong to $\tau$.-->
 
-A topological space is a pair $(X, \tau)$, where $X$ is a set of points and $\tau$ is a collection of subsets of $X$ (the topology). $\tau$ must satisfy the following axioms:
-
-1.  Any union of elements of $\tau$ belongs to $\tau$.
-2.  Any finite intersection of elements of $\tau$ belongs to $\tau$.
-3.  $X$ and $\emptyset$ belong to $\tau$.
-
-Based on the definition of topological space, @hausdorff1914grundzuge formally defined the interior, boundary and exterior of a set. These three topological properties are the core of topological models used in spatial analysis. Given a set $Y$ in topological space $(X, tau)$:
-
--   interior (doplnim)
-
--   boundary
-
--   exterior --\>
-
--   tohle ma byt zakomentovany ale nejde mi to
+<!--Based on the definition of topological space, @hausdorff1914grundzuge formally defined the interior, boundary and exterior of a set. These three topological properties are the core of topological models used in spatial analysis. Given a set $Y$ in topological space $(X, tau)$: interior (doplnim),boundary,exterior -->
 
 <!--This phenomena is used across other fields. Among the most notable applications of graphs on topological relationships, Kirchhoff (1847) represented an electrical circuit as a graph, implicitly using tree structures (see chapter xx) to identify independent circuit equations. A tree in the context of graph theory was later formalized by Cayley (1857), who used graphs to represent chemical structures.-->
 
@@ -287,15 +273,15 @@ Polygonal coverage, or also planar enforcement, is a specific case of these rule
 
 -fig topology errors slivers, gaps
 
-Geoplanar also adresses non-planar touches and edges as planar enforcement violation. In their presence, contiguity detection is compromised as two polygons are considered a Rook contiguity neighbours if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping boundaries, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. Similarly with Queen contiguity - two polygons are considered a neighbour if they share a vertex. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data.
+Geoplanar [@geopanda2026], a python package developed for planar enforcement, among overlaps and gaps, also considers non-planar touches and edges as a violation. In their presence, contiguity detection is compromised as two polygons are considered a Rook contiguity neighbours if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping boundaries, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. Similarly with Queen contiguity - two polygons are considered a neighbour if they share a vertex. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data.
 
 -fig non planar touches/edges
 
 <!-- Various software tools can evaluate the datasets for topology violations. Shapely, python wrapper for the GEOS library, implements functions for checking individual geometric validity rather than global topology. JTS Topology Suite (JTS), an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like QGIS and ArcGIS Pro evaluate the selected topology rules (i. e. for polygonal coverage must not overlap and must not have gaps) and visually highlight every error on the map. While JTS, QGIS, and ArcGIS Pro validate topology by checking individual geometries, Mapshaper temporarily converts the spaghetti model into an explicit topological data structure. Instead of storing independent geometries in rows, Mapshaper decomposes a polygonal dataset into an arc-node graph: creating edges (arcs) for boundaries and nodes where three or more polygons intersect. Polygons are then defined mathematically through sequences of these shared arcs, eliminating coordinate redundancy. In this explicit topological structure, the information detailing which polygons neighbor each other is inherently stored within the data model itself. -->
 
--identifying a Fixing errors, jts, geoplanar + neco malo qgis/arcgis a mapshaper
+-identifying a Fixing errors, trosku detailneji se zamerit na geoplanar a pak zminit dalsi (qgis/arcgis, mapshaper, jts)
 
--fuzzy contiguity
+Fuzzy contiguity [@rey2022PySAL] doesn't change the geometry of polygons, but it is a tool to generate $W$ without requiring strict topological relationships. By default, it creates a buffer (automatic or user-specified) around the polygonal geometries. Buffered polygons, that meet the spatial predicate `intersects` (by default) are then considered to be neighbours and this relationship is denoted in $W$.
 
 -diagram pro premka
 
@@ -304,6 +290,8 @@ Geoplanar also adresses non-planar touches and edges as planar enforcement viola
 ## Research gap
 
 # Methodology
+
+![Methology pipeline.](figures/overall_draw.png){#fig-overall_pipeline fig-align="center" width="50%"}
 
 ## Grid generation
 
@@ -347,6 +335,12 @@ where $y$ is the resulting vector of generated attribute values, $I$ is a identi
 
 ### Real data
 
+-us election counties (3k)
+
+-guerry (85)
+
+-sacramento1 (403)
+
 ### Computation
 
 ### Evaluation
@@ -364,6 +358,12 @@ where $x_1, x_2 \sim \mathcal{U}[0, 1)$ are independent covariates drawn i.i.d. 
 For each zonation, five independent sets of attribute values were generated following this process and subsequently used as input to the regionalization algorithms.
 
 ### Real data
+
+-ceara zika (184)
+
+-chicago airbnb (77)
+
+-south
 
 ### Computation
 
