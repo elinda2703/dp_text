@@ -4,6 +4,12 @@
 
 ## Spatial statistics
 
+Modelling of spatial phenomena has always been central to geoinformatics and geographical information science, to the extent that spatial statistics is considered an integral part of the discipline [@goodchild1992]. As a field, spatial statistics concerns itself with the quantitative analysis and modelling of spatial data [@pilz2025], drawing its foundations from probability theory, mathematical statistics, and stochastic modelling. Its methods address statistical dependencies between observations, spatial heterogeneity, and uncertainty inherent to geographic data - using techniques such as spatial autocorrelation analysis, clustering, interpolation or spatial modelling among others [@ripley1981, @handbook2010].
+
+A common prerequisite to these methods is a mathematically formalized representation of the relationships between spatial observations. Such relationships are encoded through spatial weights, which define the neighbourhood structure of the data and govern how influence is propagated across space.
+
+This subchapter provides an overview of the core spatial statistical methods employed in the subsequent analysis. It first introduces spatial weights with a focus on contiguity definitions, then presents the most established spatial autocorrelation techniques used to detect homogeneity and heterogeneity in spatial data. Finally, it discusses widely used regionalization methods, which seek to partition spatial units into coherent regions according to attribute similarity and spatial contiguity constraints.
+
 <!--- The first appearance of formalizing spatial autocorrelation formula goes to @moran1950 known as Moran's I, most widely known spatial autocorrelation indicator. The next one was Geary with his Geary C. Spatial autocorrelation was popularized by the seminal work of cliff and ord, alongside spatial weight matrices, which are a part of spatial autocorrelation formulas. SAC is important part of analysis in many fields including physical geography, health sciences and epidemiology, criminology, segregation, political geogrphy and spatial econometrics among others. -->
 
 ### Spatial weights
@@ -22,11 +28,17 @@ Spatial weight matrix can be understood as a graph adjacency matrix, therefore s
 
 #### Contiguity {#sec-contiguity}
 
-Spatial objects that share a common border are considered to be contiguous. However, "sharing a common border" isn't a rigorous definition, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces: *Rook*, *Queen*, and *Bishop*.
+Spatial objects that share a common border are considered to be contiguous. However, "sharing a common border" isn't a rigorous definition, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces:
 
-For a pair of polygons to be considered *Rook* neighbours, the polygons must share an edge (a boundary of non-zero length). *Queen* contiguity is less strict - the polygons are considered neighbours if they share at least one point (vertex or a shared edge). Bishop contiguity, rarely used on its own is strictly defined as polygons sharing only a point, but no edges. Therefore, it represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook*). <!--- All of these relationships can be formally expressed using the DE-9IM strings, as illustrated in Figure XX. -->Furthermore, these base definitions can be expanded into higher-order contiguity weights (neighbours of neigbours) to model relationships beyond immediate neighbours.
+-   *Rook*: The polygons are considered neighbours if they share an edge (a boundary of non-zero length).
 
--nejaky deeper popis contigutiy matrix? symetričnost, row standartization?
+-   *Queen*: The polygons are considered neighbours if they share at least one point (vertex or a shared edge).
+
+-   *Bishop*: The polygons are considered neighbours if they share only a point, but no edges. It represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook).*
+
+Furthermore, these base definitions can be expanded into higher-order contiguity weights (neighbours of neigbours) to model relationships beyond immediate neighbours.
+
+-nejaky deeper popis contigutiy matrix? symetričnost?
 
 -In geographical analysis, Rook or Queen contiguity is usually the standard. There is no concensus, which matrices use when, it is mostly experimental as it depends on the character of the data, but it impacts the outcome of the statistic.. nejaka hlubsi resers na specfication of weight matrix?
 
@@ -134,11 +146,18 @@ $W$ acts as a loss function, the goal of clustering is to minimize it. Some meth
 
 This chapter will serve as an overview of widely used methods and in the experimental part, we will test the robustness to polygonal coverage violations of two methods - SCHC and SKATER.
 
-#### Agglomerative clustering/SCHC
+#### SCHC
 
-Spatially constrained hierarchical clustering is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. It is a greedy algorithm, therefore once the observations are merged, they cannot be split in another iteration.
+Spatially constrained hierarchical clustering (SCHC) is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. It is based on agglomerative clustering with a contiguity constraint. It is a greedy algorithm, therefore once the observations are merged, they cannot be split in another iteration.
 
-Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage criterion. In vast majority of applications, dissimilarity is measured using Euclidean distance, which also required for the use of Ward's linkage, preferred for regionalization and will be further described in this chapter. Other common linkages include single linkage (minimum distance between any pair of observations in the two clusters), complete linkage (maximum distance), and average linkage (mean distance).
+Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage criterion. The four main types of linkages are:
+
+-   Single linkage: dissimilarity is measured based on the minimum distance between any pair of observations in the two clusters.
+-   Complete linkage: dissimilarity is measured based on the maximum distance between any pair of observations in the two clusters.
+-   Average linkage: dissimilarity is measured based on the maximum distance between any pair of observations in the two clusters.
+-   Ward's linkage: see below.
+
+In vast majority of applications, dissimilarity is measured using Euclidean distance, which also required for the use of Ward's linkage, preferred for regionalization and will be further described in this chapter.
 
 The dissimilarity is denoted in dissimilarity matrix $D$, which is initially $n \times n$ as each observation starts as its own cluster. Each element $d_{ij}$ represents the dissimilarity between each pair of clusters (or single observations). At each step, the algorithm merges the two clusters/observations, that have the smallest dissimilarity (smallest value from $D$) under the contiguity constraint. After each merge, $D$ is updated using an updating formula, that computes the dissimilarities between the new cluster $C$ and a cluster $P$, reducing both dimensions of $D$ by one in each iteration.
 
@@ -164,11 +183,11 @@ In practice, the number of clusters (regions) $k$ is fixed in advance, and the m
 
 #### SKATER
 
-Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method. Unlike SCHC, it is not agglomerative, but divisive. It is based on pruning a minimum spanning tree (MST) - a subgraph that connects all nodes of a graph using the subset of edges with the minimum possible total edge weight, without forming any cycles.
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method. Unlike SCHC, it is not agglomerative, but divisive. It is based on pruning a minimum spanning tree (MST) - a subgraph that connects all nodes of a graph using the subset of edges with the minimum possible total edge weight, without forming any cycles. The MST is usually built using Prim's or Kruskal's algorithm.
 
 -mst partitioning fig
 
-For SKATER, MST is a subset of edges from contiguity spatial weights graph (see definiton in @sec-contiguity). The weights are assigned to each $(i,j)$ edge based on the dissimilarity between the attribute vectors of observations $i$ and $j$, typically their squared Euclidean distance in attribute space:
+For the SKATER algorithm, MST is a subset of edges from contiguity spatial weights graph (see definiton in @sec-contiguity). The weights are assigned to each $(i,j)$ edge based on the dissimilarity between the attribute vectors of observations $i$ and $j$, typically their squared Euclidean distance in attribute space:
 
 $$d(i, j) = d(x_i, x_j) = \sum_{l=1}^{n} (\mathbf{x}_{il} - \mathbf{x}_{jl})^2$$ {#eq-euclidean_distance_skater}
 
@@ -182,19 +201,55 @@ where $\bar{x}_T$ is the centroid of the attribute values of all observations in
 
 $$\Delta SSD=SSD_T-(SSD_A+SSD_B)$$ {#eq-ssd_skater}
 
-At each step, SKATER removes the edge that maximizes $\Delta SSD$, i.e. the split that most reduces the combined within-cluster dissimilarity of the two resulting subtrees. This process is repeated, recursively splitting the resulting subtrees, until the desired number of regions $k$ is reached.
-
-#### AZP
+At each step, SKATER removes the edge that maximizes $\Delta SSD$, i.e. the split that most reduces the combined within-cluster dissimilarity of the two resulting subtrees. This process is repeated $k-1$ times, recursively splitting the resulting subtrees, until the desired number of regions $k$ is reached.
 
 #### REDCAP
 
-#### Max p-regions
+Developed by @guo2008, Regionalization with dynamically constrained agglomerative clustering and partitioning (REDCAP) consists of both merging and divisive processes. It combines SCHC and SKATER.
+
+The first part of the algorithm is ideologically identical to SCHC, it builds an entire dendrogram. It has a dissimilarity matrix, which we can also think of as a complete graph. That is a graph, that connects all pairs of possible observations with assigned weight based on their dissimilarity. The dissmilarity is based on the linkage parameter (see chap x). In the original paper, @guo2008 omits Ward's linkage, however, it is implemented in Geoda [@anselin2006GeoDa].
+
+REDCAP has an additional parameter on what observations should be checked for dissimilarity between clusters. @guo2008 distinguishes two constraining strategies when computing the dissimilarity between two clusters:
+
+-   First-order: only edges connecting two neigbouring individual observations (not clusters), that sit on the border for the two clusters (regions) and are in different clusters at the same time, are considered.
+-   Full-order: All edges connecting observations from different clusters are considered. This is also used in SCHC.
+
+During each iteration, the pair of neigbouring clusters that has the smallest dissimilarity is merged, until all bservation belong to one cluster and the whole dendrogram is built. More importantly, during this agglomerative process, MST is being constructed. During each interation when the two clusters are selected for merging, an edge is added to the MST. This edge always corresponds to the first-order single-linkage...
+
+After the whole MST is built, the pruning process is the same as in SKATER, meaning $k-1$ edges are removed from the MST to reach $k$ regions. When using REDCAP's First-Order Single Linkage, the MST is identical the the SKATER's one (and the final result as well), as it indirectly uses Kruskal's algorithm.
+
+#### AZP
+
+Automatic Zoning Procedure (AZP) was proposed by @openshaw1977 and extended in @openshaw1995. Unlike the approaches discussed above, AZP is not hiearchical.
+
+At the beginning, usually randomly, it delineats $p$ contiguus regions. For each region the within cluster $SSD$ is calculated following the equation ... Total within $SSD$ corresponds to the sum of all within cluster $SSD$s. The algorithm then randomly picks one of those regions (called $c$) and it identifies its neighbouring observations from different regions (called $C$). From $C$, it randomly selects an observation $i$ and directly removes it from the list $c$. $i$ is now a candidate to be removed from its original region and become a part of region $C$. For that to happen, it must satisfy two rules:
+
+-   it must not break the contiguity of the original region,
+-   it must decrease the total within $SSD$.
+
+If the two rules are satisfied, $i$ is added to region $C$ and $c$ is updated for new neigbouring observations gained by adding $i$. This process is repeated until $C$ is empty. After $C$ is empty, the algorithm selects a different region and repeats the whole process, until it goes trough all the regions.
+
+AZP doesn't provide an analytical solution. It doesn't guarantee a global optimum and it can easily get trapped in a local optimum @anselin2024 . AZP therefore has multiple other parameters that enhace the results of the algorithm.
+
+One of those parametrs is search option, which... It includes tabu search, which prevents observations to switch back to its original region during the next few iterations. Another one is Simulated Annealing, using the metropolois algorithm to...
+
+The other parameter is regarding the intial regionalization. The *automatic regionalization with initial seed location* (ARiSeL), seeks to... Other option is to draw the initial region delineation from other regionalzation methods, such as SCHC or SKATER.
+
+#### Max p-regions problem
+
+Proposed by @duque2012, max p-regions problem seeks to find maximum number $p$ of contigous regions, so that each of these regions meets a minimum size constraint, ususally being a sum of one attribute value across the observations (e. g. population).
+
+The first phase in the algorithm is the growth. An observation $i$ is randomly selected. It is checked if it its attribute value (lets say population) is larger than a treshold. If it is, $i$ is its own cluster (singleton). If its not, its neigbours are identified and the one with biggest population joins $i$ in the cluster. Combined population of those two is calculated. If its bigger tnah the treshold, the region is complete for now. If it isnt, the neigbours are updated for the new observation and the process is repeated unitl the treshold is reached. After the treshold is reached, another unassigned observation is selected and the process is repeated.
+
+With the growth phase, isolated unassigned observations or multiple contigous observations that together dont meet the population constrint occur. Those are called enclaves. Each of them has to be assigned to an exsiting neigbouring region frm the growth phase. If the enclave is neigbouring more than one region, the decision is made to minimize the overall $SSD$. If there are multiple such enclves, all posibble combinations of joining are computed and checked for the overall $SSD$.
+
+The outcome after the growth and enclave assignment is the initial feasible solution. Now its time for optimizing process like with AZP...
 
 ## Topology in geography
 
 Topology is a mathematical discipline that “studies properties of spaces that are invariant to continuous deformation” [@waterloo_topology]. In geographic context, it means focusing strictly on the spatial relationships between features, such as connectivity, adjacency, and containment (citace), rather than their absolute geometric shape, distance, or magnitude.
 
-Topological relationships are essential in numerous geographical disciplines, such as landscape ecology using overlay analysis, hydrology, geography of transport using the network analysis/line adjacency, cartography and spatial statistics (topologies of borders) [@papadimitriou_geo-topology_2023]. Probably one the most important connections between topology and geography is the Four Colour Theorem, proposed by Francis Guthrie 1852. It states that any planar map consisting of polygons can be coloured using only four colours without any pair of neigbouring polygons sharing the same colour. The theorem was proven more than a hundred years later by @appel1977fourcolor1 and it relied entirely on topological principles, specifically, polygonal adjacency.
+Topological relationships are essential in numerous geographical disciplines, such as landscape ecology using overlay analysis, hydrology and the geography of transport relying on network analysis and line adjacency, as well as cartography and spatial statistics examining border topologies [@papadimitriou_geo-topology_2023]. Probably one of the most important connections between topology and geography is the Four Colour Theorem, proposed by Francis Guthrie in 1852. It states that any planar map consisting of polygons can be coloured using only four colours without any pair of neighbouring polygons sharing the same colour. The theorem was proven more than a hundred years later by @appel1977fourcolor1, and it relied entirely on topological principles, specifically polygonal adjacency.
 
 <!-- The discipline was formally established in the early 20th century, however its roots trace back to Leonhard Euler’s solution to the Seven Bridges of Königsberg problem (@euler1741solutio). The objective of the problem was to cross every bridge in the city exactly once and return to the starting point. The physical distances and exact shapes of the landmasses were entirely irrelevant to the solution, the outcome depended solely on knowing which bridges connected which landmasses. By abstracting the city into a graph (see definition in chap. xx) while preserving the information about the connectivity of the landmasses, he was able to solve the problem. --->
 
@@ -252,6 +307,8 @@ In most use cases, non-empty intersections (0, 1 or 2) can be universally treate
 
 Software libraries implement these predicates alongside additional ones as boolean functions, such as modified formulations (e. g. `contains_properly` in *Shapely* library) or inverse relationships (e. g. `covered_by` in *Shapely*). Custom spatial queries can be formalized by defining the flattened DE9-IM string (e. g. `relate` in *Shapely*, `ST_relate` in *PostGIS*). Topological relationships derived from *DE-9IM* are the underlying framework for many spatial operations including overlay analysis, contiguity detection, and topology validation.
 
+As contiguity detections directly rely on topological properties of a polygonal dataset, contiguity can be defined trough DE9-IM matrix as well. In libpysal, contiguity is detected trough checking the matrix, where Queen must satisfy the touches spatial predicate. Rook is defined trough as ...
+
 ### Topological validity and polygonal coverage
 
 Spatial data often suffers from errors from a variety of sources. These inaccuracies are typically introduced during manual vectorization or data entry, data transfer, geometric editing operations (such as simplification or reprojection), or the integration of heterogeneous datasets of varying ages [@spatialeye_topology, @gisgeography_topology, @servigne2000].
@@ -273,7 +330,7 @@ Polygonal coverage, or also planar enforcement, is a specific case of these rule
 
 -fig topology errors slivers, gaps
 
-Geoplanar [@geopanda2026], a python package developed for planar enforcement, among overlaps and gaps, also considers non-planar touches and edges as a violation. In their presence, contiguity detection is compromised as two polygons are considered a Rook contiguity neighbours if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping boundaries, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. Similarly with Queen contiguity - two polygons are considered a neighbour if they share a vertex. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data.
+Geoplanar [@geopanda2026], a python package developed for planar enforcement of Geopandas datasets, among overlaps and gaps, also considers non-planar touches and edges as a violation. In their presence, contiguity detection is compromised as two polygons are considered a Rook contiguity neighbours if they share at least two consecutive vertices. These vertices need to be present and encoded in both polygons, which differs from a pure spatial predicate testing overlapping boundaries, as this might not be encoded as two consecutive vertices in one of the neighbours if the shared part is just a slice of an edge. Similarly with Queen contiguity - two polygons are considered a neighbour if they share a vertex. While some tools (e.g. libpysal) allow both of these definitions, a default is the strict vertex coincidence - a potential point of topology corruption in real-world data.
 
 -fig non planar touches/edges
 
@@ -288,6 +345,14 @@ Fuzzy contiguity [@rey2022PySAL] doesn't change the geometry of polygons, but it
 -even though such tools exist, topological errors still occur, a presne proto pisu tuhle praci
 
 ## Research gap
+
+-(mis)specification of weight matrix
+
+-clanky o uncertainty of attributues, missing data a their implications + propagation of error?
+
+-testovani na divnejch datech, @westerholt_social_media, @westerholt_poisson, @westerholt_interference
+
+-graph corruption (mostly silnice)
 
 # Methodology
 
@@ -363,7 +428,7 @@ For each zonation, five independent sets of attribute values were generated foll
 
 -chicago airbnb (77)
 
--south
+-south (1k+)
 
 ### Computation
 
