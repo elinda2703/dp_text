@@ -339,8 +339,6 @@ In presence of **non-planar edges and touches**, contiguity detection is comprom
 
 Fuzzy contiguity [@rey2022PySAL] doesn't change the geometry of polygons, but it is a tool to generate $W$ without requiring strict topological relationships. By default, it creates a buffer (automatic or user-specified) around the polygonal geometries. Buffered polygons, that meet the spatial predicate `intersects` (by default) are then considered to be neighbours and this relationship is denoted in $W$.
 
--diagram pro premka
-
 -even though such tools exist, topological errors still occur, a presne proto pisu tuhle praci
 
 ### Erroneous datasets??
@@ -351,9 +349,13 @@ A critical gap in the current literature is the lack of research explicitly isol
 
 ### Data uncertainty
 
-@fisher1999models distinguishes three primary forms of uncertainty in spatial data: error, vagueness, and ambiguity. Error occurs when a geographical object is well-defined, but its recorded measurement or position deviates from the objective truth. Vagueness arises when the boundaries of an object are not clearly defined or crisp. Finally, ambiguity happens when there are multiple differing definitions or classifications for a single object or attribute, an issue fundamentally tied to subjective human interpretation.
+@fisher1999models distinguishes three primary forms of uncertainty in spatial data: error, vagueness, and ambiguity. While vagueness and ambiguity reflect uncertain properties of the phenomenon itself, error occurs when a well-defined object's position or attribute deviates from the ground truth. This thesis is concerned with a specific form of the latter: positional error in boundaries, resulting in incorrectly built spatial weight matrix. Standard spatial analytical workflows assume that input geometries and the adjacency relations derived from them are exact, therefore it is often not taken in account for.
 
--this thesis focuses on the error part
+One way to approach uncertainty of boundaries (line segments) is a band around the line derived trough a specific statistic or mathematical procedure. An overview of the band-based approaches can be found in @tong2010. Probably the simplest oh those is the probabilistic epsilon band [@perkal1956epsilon, @chrisman], drawing a uniform buffer along the line, assuming the true line lies entirely within it. The type of uncertainty they can solve is for example sliver polygon detection in temporal data [@mas2005, @delafontaine2009], which is a type of topological error.
+
+Explicitely testing the impact of positional error, @wei2012 and @wei2022 used the epsilon band in optimization models. The latter one explicitly tests Unit Restrction model, stating that no 2 adjacent harvest units can be cut silmutaneously. They...
+
+Epsilon bands can be used when adressing the sliver polygons in dataset, which is a form of topological error. @mas2005 employed it, classifying any change polygon falling completely within it as false change. When applied to a synthetic dataset with zero true change, this method successfully eliminated 95% of the artificially generated sliver polygons, though the author cautions that excessively wide bands risk erasing narrow, legitimate geographic features.
 
 To address positional uncertainty in spatial optimization, @wei2012 introduced the multi-objective Error-Anti-Covering Location Problem (E-ACLP) to evaluate sex offender residency dispersion laws, which require a mandatory 1,320-foot separation distance $\Gamma$ between households. The E-ACLP embeds a $\pm$ 100-foot geographic error margin $\epsilon$ by mathematically partitioning proximity constraints into a *certain conflict set* (less than $\Gamma - \epsilon$) and an *uncertain conflict set* (between $\Gamma - \epsilon$ and $\Gamma + \epsilon$). The model then maximizes total legal residences while minimizing a penalty function that charges a uniform cost of 1 for every uncertain constraint it is forced to relax. The results demonstrate that while an error-blind model identifies an upper bound of 16 residences, the E-ACLP maps a risk spectrum from an ultra-conservative 15 residences up to an aggressive 19 residences, revealing that maximizing capacity to 19 requires accepting 22 potential proximity violations.
 
