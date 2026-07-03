@@ -1,10 +1,12 @@
 # Introduction
 
+Modelling of spatial phenomena has always been central to geoinformatics and geographical information science, to the extent that spatial statistics is considered an integral part of the discipline [@goodchild1992]...
+
 # Background
 
 ## Spatial statistics
 
-Modelling of spatial phenomena has always been central to geoinformatics and geographical information science, to the extent that spatial statistics is considered an integral part of the discipline [@goodchild1992]. As a field, spatial statistics concerns itself with the quantitative analysis and modelling of spatial data [@pilz2025], drawing its foundations from probability theory, mathematical statistics, and stochastic modelling. Its methods address statistical dependencies between observations, spatial heterogeneity, and uncertainty inherent to geographic data - using techniques such as spatial autocorrelation analysis, clustering, interpolation or spatial modelling among others [@ripley1981, @handbook2010].
+Spatial statistics concerns itself with the quantitative analysis and modelling of spatial data [@pilz2025], drawing its foundations from probability theory, mathematical statistics, and stochastic modelling. Its methods address statistical dependencies between observations, spatial heterogeneity, and uncertainty inherent to geographic data - using techniques such as spatial autocorrelation analysis, clustering, interpolation or spatial modelling among others [@ripley1981, @handbook2010].
 
 A common prerequisite to these methods is a mathematically formalized representation of the relationships between spatial observations. Such relationships are encoded through spatial weights, which define the neighbourhood structure of the data and govern how influence is propagated across space.
 
@@ -20,7 +22,7 @@ Spatial weights can be represented as a matrix, denoted as $W$. $W$ is a $N \tim
 
 ![Rook contiguity graph.](figures/usa_graph.png){#fig-usa_graph fig-align="center" width="80%"}
 
-Spatial weight matrix can be understood as a graph adjacency matrix, therefore spatial graph is another representation of spatial weights. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations. Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph.
+Spatial weight matrix can be understood as a graph adjacency matrix, therefore spatial graph (see @fig-usa_graph) is another representation of spatial weights. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations. Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph.
 
 -neco o symetricnosti?
 
@@ -28,7 +30,7 @@ Spatial weight matrix can be understood as a graph adjacency matrix, therefore s
 
 #### Contiguity {#sec-contiguity}
 
-Spatial weight matrices are most commonly defined trough contiguity, meaning that polygons that share a mutual border are considered to be spatial neigbours. However, "sharing a common border" isn't a rigorous definition, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces:
+Spatial weight matrices are most commonly defined trough contiguity, meaning that polygons that share a mutual border are considered to be spatial neigbours. However, this definiton isn't a rigorous, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces:
 
 -   *Rook*: The polygons are considered neighbours if they share an edge (a boundary of non-zero length).
 
@@ -36,23 +38,19 @@ Spatial weight matrices are most commonly defined trough contiguity, meaning tha
 
 -   *Bishop*: The polygons are considered neighbours if they share only a point, but no edges. It represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook).*
 
-Rook and Queen contiguity matrices dominate in spatial statistics. They are the only valid choice for regionalization methods and are the default for spatial autocorrelation metrics. Bishop is rarely used on its own, but sometimes its used for hybrid weights (citace). Beyond immediate neigbours, contiguty can be expnaded to higer order contiguity weighs (neigbours of neigbours), often used in spatial data modelling [@floraxImpactsMisspecifiedSpatial1995].
-
--nejaky deeper popis contigutiy matrix? symetričnost?
+Rook and Queen contiguity matrices dominate in spatial statistics. They are the only valid choice for regionalization methods and are the default for spatial autocorrelation metrics. Bishop is rarely used on its own, but sometimes its used for hybrid weights. Beyond immediate neigbours, contiguty can be expnaded to higer order contiguity weighs (neigbours of neigbours), often used in spatial data modelling.
 
 <!---Euler in his Konigsberg bridges solution relied on the concept of a node degree - the number of edges incident to a given node, observing that the problem has a solution only if all the nodes (landmasses) have an even degree (are connected by an even number of bridges). --->
 
 ### Spatial autocorrelation
 
-According to Tobler's Firts law of geography "everything is related to everything else, but near things are more related than distant things". This principle underlies the concept of spatial autocorrelation (SAC) - the degree to which the value of an observation resembles the values of its spatial neighbours. Under a positive SAC, observations that are geographically close have similar values and tend to cluster. Under a negative SAC, similar values tend to be spatially dispersed rather than clustered, resembling a checkerboard pattern.
+According to Tobler's Firsts law of geography "everything is related to everything else, but near things are more related than distant things". This principle underlies the concept of spatial autocorrelation (SAC) - the degree to which the value of an observation resembles the values of its spatial neighbours. Under a positive SAC, observations that are geographically close have similar values and tend to cluster. Under a negative SAC, similar values tend to be spatially dispersed rather than clustered, resembling a checkerboard pattern, visualized in @fig-sac. This chapter provides an overview of the often used sac indicators such as Moran's $I$ [@moran1950] , Geary's $C$ [@geary] and Gettis-Ord's $G$ [@getis1992].
 
 ![Spatial autocorrelation.](figures/sac.png){#fig-sac fig-align="center" width="80%"}
 
--spatial autocrrelation pozivame tehdy a tehdy
-
 #### Moran's I
 
-A useful visualization to built some intuition for SAC is the Moran scatterplot which visualizes the relationship between the value of each observation and the values of its neighbour - spatial lag. The spatial lag of observation $i$ is the weighted sum of the centered values of its neighbours, as defined by the spatial weights matrix $W$:
+A useful visualization to built some intuition for SAC is the Moran scatterplot (see @fig-moran_scatterplot) which visualizes the relationship between the value of each observation and the values of its neighbour - spatial lag. The spatial lag of observation $i$ is the weighted sum of the centered values of its neighbours, as defined by the spatial weights matrix $W$:
 
 $$
 y_{sl-i} = \sum_{j} w_{ij}y_j
@@ -94,7 +92,7 @@ Because a specific local Moran's I value can be obtained purely by chance, its s
 
 ![LISA cluster map.](figures/lisa.png){#fig-lisa_example fig-align="center" width="80%"}
 
-On LISA cluster maps of real-world data, the majority of significant clusters are typically HH or LL, compared to few HL or LH outliers, which is consistent with Tobler's first law of geography - similar values tend to occur near one another more often than not.
+On LISA cluster maps of real-world data, the majority of significant clusters are typically HH or LL, compared to few HL or LH outliers, which is consistent with Tobler's first law of geography - similar values tend to occur near one another.
 
 #### Geary C
 
@@ -173,7 +171,7 @@ $$d^2_{PC} = \frac{n_A + n_P}{n_C + n_P} d^2_{PA} + \frac{n_B + n_P}{n_C + n_P} 
 
 As mentioned above, the clusters/observations can be only merged under the contiguity constraint, which is denoted in spatial weights matrix $W$. For this thesis, we will assume a binary $W$, meaning that observations $i$ and $j$ can be merged only if $w_{ij}=1$. After the merge, $W$ needs to be updated. If $i$ and $j$ were merged into a new cluster $C$, $i$-th and $j$-th row and column will be replaced by $C$. The relationship between $C$ and the rest of the clusters $P$ will be set to $w_{PC}= 1$ if $w_{iP}=1 \lor w_{jP}=1$, inheriting all the neighbours of both $i$ and $j$.
 
-In practice, the number of clusters (regions) $k$ is fixed in advance, and the merging process stops once this number is reached. This corresponds to "cutting" the hierarchical tree refered to as dendrogram, at the appropriate height.
+In practice, the number of clusters (regions) $k$ is fixed in advance, and the merging process stops once this number is reached. This corresponds to "cutting" the hierarchical tree refered to as dendrogram, displayed in @fig-dendrgram, at the appropriate height.
 
 ![Dendrogram.](figures/dendrogram.png){#fig-dendrgram fig-align="center"}
 
@@ -181,7 +179,7 @@ In practice, the number of clusters (regions) $k$ is fixed in advance, and the m
 
 #### SKATER
 
-Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method. Unlike SCHC, it is not agglomerative, but divisive. It is based on pruning a minimum spanning tree (MST) - a subgraph that connects all nodes of a graph using the subset of edges with the minimum possible total edge weight, without forming any cycles. The MST is usually built using Prim's or Kruskal's algorithm.
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method. Unlike SCHC, it is not agglomerative, but divisive. It is based on pruning (illustrated in @fig-skater_partitioning) a minimum spanning tree (MST) - a subgraph that connects all nodes of a graph using the subset of edges with the minimum possible total edge weight, without forming any cycles. The MST is usually built using Prim's or Kruskal's algorithm.
 
 ![SKATER partitioning.](figures/chicago_skater_steps.png){#fig-skater_partitioning fig-align="center" width="80%"}
 
@@ -299,7 +297,7 @@ In most use cases, non-empty intersections (0, 1 or 2) can be universally treate
 
 : Spatial predicates. - tohle taky dopnim
 
-Software libraries implement these predicates alongside additional ones as boolean functions, such as modified formulations (e. g. `contains_properly()` in *Shapely* library) or inverse relationships (e. g. `covered_by()` in *Shapely*). Custom spatial queries can be formalized by defining the flattened DE9-IM string (e. g. `relate()` in *Shapely*, `ST_relate()` in *PostGIS*). Topological relationships derived from *DE-9IM* are the underlying framework for many spatial operations including overlay analysis, contiguity detection, and topology validation.
+Software libraries implement these predicates alongside additional ones as boolean functions, such as modified formulations (e. g. `contains_properly` in *Shapely* library) or inverse relationships (e. g. `covered_by` in *Shapely*). Custom spatial queries can be formalized by defining the flattened DE9-IM string (e. g. `relate` in *Shapely*, `ST_relate` in *PostGIS*). Topological relationships derived from *DE-9IM* are the underlying framework for many spatial operations including overlay analysis, contiguity detection, and topology validation.
 
 Because contiguity detection relies directly on the topological properties of a polygonal dataset, these spatial relationships can be rigorously defined using the DE-9IM. In libraries such as libpysal, contiguity is established by evaluating this topological matrix. For instance, Queen contiguity satisfies the standard `touches` spatial predicate. Rook contiguity is defined by the DE-9IM string `F***1****`, which mandates that the intersection of the two polygon boundaries must be exactly 1-dimensional (a shared edge).
 
@@ -325,27 +323,25 @@ Polygonal coverage, or also planar enforcement, is a specific selection of topol
 
 **Overlaps** occur when two polygons share part of their interior. They are identified using the `overlaps` spatial predicate, which returns an array of index pairs corresponding to overlapping geometries. The violation can be resolved either by trimming one of the polygons to remove the shared area, or by merging the two polygons into one.
 
-**Gaps** are detected by converting polygon boundaries to linestrings and exploiting a key property of planar enforcement: when two polygons share an edge perfectly, their coincident boundaries merge into a single linestring after `union_all()`. Where a gap exists, the edges do not coincide and remain as separate LineStrings, enclosing the void between them. `polygonize` then reconstructs every closed face from this line network, producing both the original polygons and any gap polygons as closed faces. The resulting set is filtered against the original GeoDataFrame using the `covers` predicate — gap polygons are not covered by any input polygon, since no input geometry claims that space.
+**Gaps** are detected by converting polygon boundaries to linestrings and exploiting a key property of planar enforcement: when two polygons share an edge perfectly, their coincident boundaries merge into a single linestring after `union_all`. Where a gap exists, the edges do not coincide and remain as separate LineStrings, enclosing the void between them. `polygonize` then reconstructs every closed face from this line network, producing both the original polygons and any gap polygons as closed faces. The resulting set is filtered against the original GeoDataFrame using the `covers` predicate - gap polygons are not covered by any input polygon, since no input geometry claims that space.
 
-**Omitted interiors** arise when a polygon lies entirely within another polygon, meaning the larger polygon should contain a hole, but none is encoded in its geometry. They are identified using the `contains` spatial predicate. The violation is corrected by subtracting the smaller polygon from the larger one, punching a correctly encoded hole into the larger geometry.
+**Omitted interiors** arise when a polygon lies entirely within another polygon, meaning the larger polygon should contain a hole, but none is encoded in its geometry. They are identified using the `contains` spatial predicate. The violation is corrected by subtracting the smaller polygon from the larger one, leaving a correctly encoded hole in the larger geometry.
 
 In presence of **non-planar edges and touches**, contiguity detection is compromised. *Rook* contiguity considers two polygons neighbours if they share at least two consecutive vertices, and those vertices must be explicitly present and encoded in both polygons, stricter than a pure spatial predicate testing for overlapping boundaries. *Queen* contiguity similarly requires a shared vertex to exist in both geometries. Geoplanar detects violations by subtracting a *Queen* contiguity graph from a fuzzy contiguity graph, where fuzzy contiguity captures geometrically adjacent pairs regardless of shared vertex encoding. Pairs that appear in the fuzzy graph but not in the *Queen* graph are flagged as non-planar. The violation is corrected by inserting additional vertices into the relevant geometries, ensuring that every shared edge is encoded with a consistent set of vertices on both sides.
 
--fig non planar touches/edges
+In addition to Geoplanar, several other tools address topology checking. JTS Topology Suite (JTS) @jtsLinearThinkingPolygonal2022, an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like QGIS and ArcGIS Pro evaluate the selected topology rules (i. e. for polygonal `coverage must not overlap` and `must not have gaps`) and visually highlight every error on the map. Mapshaper temporarily converts the spaghetti model into an explicit topological data structure. Instead of storing independent geometries in rows, Mapshaper decomposes a polygonal dataset into an arc-node graph: creating edges (arcs) for boundaries and nodes where three or more polygons intersect. Polygons are then defined mathematically through sequences of these shared arcs, eliminating coordinate redundancy. In this explicit topological structure, the information detailing which polygons neighbor each other is inherently stored within the data model itself.
 
-<!-- Various software tools can evaluate the datasets for topology violations. Shapely, python wrapper for the GEOS library, implements functions for checking individual geometric validity rather than global topology. JTS Topology Suite (JTS), an open source Java software library, can evaluate an entire polygonal coverage, returning error strings with the specific coordinates of violations. Desktop software like QGIS and ArcGIS Pro evaluate the selected topology rules (i. e. for polygonal coverage must not overlap and must not have gaps) and visually highlight every error on the map. While JTS, QGIS, and ArcGIS Pro validate topology by checking individual geometries, Mapshaper temporarily converts the spaghetti model into an explicit topological data structure. Instead of storing independent geometries in rows, Mapshaper decomposes a polygonal dataset into an arc-node graph: creating edges (arcs) for boundaries and nodes where three or more polygons intersect. Polygons are then defined mathematically through sequences of these shared arcs, eliminating coordinate redundancy. In this explicit topological structure, the information detailing which polygons neighbor each other is inherently stored within the data model itself. -->
+As an alternative to strict topological contiguity, [@rey2022PySAL] implement Fuzzy contiguity as part of PySAL. It doesn't change the geometry of polygons, but it is a tool to generate $W$ without requiring strict topological relationships. By default, it creates a buffer (automatic or user-specified) around the polygonal geometries. Buffered polygons, that meet the spatial predicate `intersects` (by default) are then considered to be neighbours and this relationship is denoted in $W$.
 
--identifying a Fixing errors, trosku detailneji se zamerit na geoplanar a pak zminit dalsi (qgis/arcgis, mapshaper, jts)
+-diagram pro premka
 
-Fuzzy contiguity [@rey2022PySAL] doesn't change the geometry of polygons, but it is a tool to generate $W$ without requiring strict topological relationships. By default, it creates a buffer (automatic or user-specified) around the polygonal geometries. Buffered polygons, that meet the spatial predicate `intersects` (by default) are then considered to be neighbours and this relationship is denoted in $W$.
-
--even though such tools exist, topological errors still occur, a presne proto pisu tuhle praci
+Even though tools to refine topology or build contiguity without strict topological requirements exist, in practice such checking is often omitted, or, if performed, carried out by users without formal GIS training who may not recognize such phenomena. As a result, spatial datasets used in downstream analysis frequently retain unresolved topological errors. Since contiguity $W$ directly rely on the topological relationships between polygons, the errors propagate into $W$ itself and from there to any analysis, that relies on it. This thesis investigates what consequences follow for spatial autocorrelation and regionalization outcomes specifically.
 
 ### Erroneous datasets??
 
 ## Related work
 
-A critical gap in the current literature is the lack of research explicitly isolating the direct impact of topological errors on spatial statistical methods. This literature review chapter is dedicated to conceptually and methodologically similar studies. First, it introduces the broader landscape of spatial data uncertainty and errors, and their impact. Next, it discusses the specification of spatial weights matrices and its impacts on spatial analysis. Afterwards, it looks at the behaviour of spatial statistical methods under specific data conditions, such as .. Lastly, it focuses on graph degradation, which in the context of spatial weights is omitted in the literature, however, it is used in simulating road network disruption among others.
+A critical gap in the current literature is the lack of research explicitly isolating the direct impact of topological errors on spatial statistical methods. This literature review chapter is dedicated to conceptually and methodologically similar studies. First, it introduces the broader landscape of spatial data uncertainty and errors, and their impact. Next, it discusses the specification of spatial weights matrices and Modifiable Area Unit Problem and its impacts on spatial analysis. Lastly, it focuses on graph degradation, which in the context of spatial weights is omitted in the literature, however, it is used in simulating transport network disruption among others.
 
 ### Data uncertainty
 
@@ -371,7 +367,7 @@ MAUP also influences outcomes of spatial autocorrelation statistics. @amrhein199
 
 ### Specification of weight matrix
 
-Althought the behaviour of spatial statistics on corrupted $W$ has not been properly researched, various studies exist regarding the $W$ specification. That is, the consequences of choosing differently among valid representations of spatial relationships. Misspecification in the traditional sense treats $W$ as a modelling choice where different legitimate options exist, whereas this thesis treats $W$ as a quantity with a ground truth that topological error can silently corrupt. This existing literature provides both conceptual and methodological similarities...
+Althought the behaviour of spatial statistics on corrupted $W$ has not been properly researched, various studies exist regarding the $W$ specification. That is, the consequences of choosing differently among valid representations of spatial relationships. Misspecification in the traditional sense treats $W$ as a modelling choice where different legitimate options exist, whereas this thesis treats $W$ as a quantity with a ground truth that topological error can silently corrupt. This existing literature provides both conceptual and methodological similarities to this thesis.
 
 A first cluster of studies, which rely on regular lattices and simulated rather than empirical data, established that the density and configuration of $W$ affects both test power and parameter recovery [@stetzer1982; @anselin1991; @floraxImpactsMisspecifiedSpatial1995; @kelejian1998; @griffith1998; @smith2009]. Across this literature, denser and more highly connected matrices consistently reduced test power and biased the spatial dependence parameter downward, while a mismatch between the $W$ used to generate the data and the $W$ used to test or estimate the model degraded both.
 
@@ -379,7 +375,9 @@ A first cluster of studies, which rely on regular lattices and simulated rather 
 
 ### Graph degradation
 
-Corrupting $W$ by removing edges to asses the robustness of spatial statistical methods has not been yet employed, however, methodologically similar studies exist within the field of transport network analysis.
+Corrupting $W$ by removing edges to asses the robustness of spatial statistical methods has not been yet employed, however, methodologically similar studies exist within the field of transport network analysis [@cohen2000; @latora2001; @latora2005; @jenelius2012; @duan2014; @mattsson2015; @zhang2015; @wang2019; @dong2019] with an applicable design: random or specifically targeted edges or nodes are removed and some measure of vulnerability is being tested.
+
+The consistent finding is that random removal is comparatively harmless while removal guided by structural importance or spatial concentration is more damaging. @han2009 and @berche2009 reach this conclusion comparing random removal against centrality-based attack strategies on public transport networks and @berezin2015 show that a geographically localized attack can trigger complete collapse, whereas the same networks can survive random failure of a comparable or even much larger extent.
 
 # Methodology
 
