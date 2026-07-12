@@ -6,7 +6,7 @@ Modelling of spatial phenomena has always been central to geoinformatics and geo
 
 ## Spatial statistics
 
-Spatial statistics concerns itself with the quantitative analysis and modelling of spatial data [@pilz2025], drawing its foundations from probability theory, mathematical statistics, and stochastic modelling. Its methods address statistical dependencies between observations, spatial heterogeneity, and uncertainty inherent to geographic data - using techniques such as spatial autocorrelation analysis, clustering, interpolation or spatial modelling among others [@ripley1981, @handbook2010].
+Spatial statistics concerns itself with the quantitative analysis and modelling of spatial data [@pilz2025], drawing its foundations from probability theory, mathematical statistics, and stochastic modelling. Its methods address statistical dependencies between observations, spatial heterogeneity, and uncertainty inherent to geographic data - using techniques such as spatial autocorrelation analysis, clustering, interpolation or spatial modelling among others [@ripley1981; @handbook2010].
 
 A common prerequisite to these methods is a mathematically formalized representation of the relationships between spatial observations. Such relationships are encoded through spatial weights, which define the neighbourhood structure of the data and govern how influence is propagated across space.
 
@@ -16,21 +16,19 @@ This subchapter provides an overview of the core spatial statistical methods emp
 
 ### Spatial weights
 
-Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity) among others. Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance). We will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
+Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity) among others [@reyGeographicDataScience2023]. Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance). We will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
 
-Spatial weights can be represented as a matrix, denoted as $W$. $W$ is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ corresponds to the weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal [@rey2022PySAL], geoda [@anselin2006GeoDa] or spdep [@spdep] also implement sparse matrix, which stores only non-zero elements.
+Spatial weights can be represented as a matrix, denoted as $W$, which is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ corresponds to the weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal [@rey2022PySAL], geoda [@anselin2006GeoDa] or spdep [@spdep] implement sparse matrix, which stores only non-zero elements.
 
 ![Rook contiguity graph.](figures/usa_graph.png){#fig-usa_graph fig-align="center" width="80%"}
 
 Spatial weight matrix can be understood as a graph adjacency matrix, therefore spatial graph (see @fig-usa_graph) is another representation of spatial weights. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations. Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph.
 
--neco o symetricnosti?
-
 <!--- Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary) and other spatial statistics, the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012). --->
 
 #### Contiguity {#sec-contiguity}
 
-Spatial weight matrices are most commonly defined trough contiguity, meaning that polygons that share a mutual border are considered to be spatial neigbours. However, this definiton isn't a rigorous, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces:
+Spatial weight matrices are commonly defined trough contiguity, meaning that polygons that share a mutual border are considered to be spatial neigbours. However, this definiton isn't rigorous, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces:
 
 -   *Rook*: The polygons are considered neighbours if they share an edge (a boundary of non-zero length).
 
@@ -38,7 +36,9 @@ Spatial weight matrices are most commonly defined trough contiguity, meaning tha
 
 -   *Bishop*: The polygons are considered neighbours if they share only a point, but no edges. It represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook).*
 
-Rook and Queen contiguity matrices dominate in spatial statistics. They are the only valid choice for regionalization methods and are the default for spatial autocorrelation metrics. Bishop is rarely used on its own, but sometimes its used for hybrid weights. Beyond immediate neigbours, contiguty can be expnaded to higer order contiguity weighs (neigbours of neigbours), often used in spatial data modelling.
+Rook and Queen contiguity matrices dominate in spatial statistics. They are the only valid choice for regionalization methods and are the default for spatial autocorrelation metrics. Bishop is rarely used on its own, but sometimes it is used for hybrid weights. Beyond immediate neighbours, contiguity can be expanded to higher order contiguity weights (neigbours of neigbours), often used in spatial data modelling.
+
+If we assume a binary contiguity $W$, where $w_{ij}=w_{ji}=1$ if observation $i$ and $j$ are neighbours and $w_{ij}=w_{ji}=0$ if non-neighbours, $W$ is symmetrical and the graph can be represented
 
 <!---Euler in his Konigsberg bridges solution relied on the concept of a node degree - the number of edges incident to a given node, observing that the problem has a solution only if all the nodes (landmasses) have an even degree (are connected by an even number of bridges). --->
 
@@ -90,7 +90,7 @@ where $z_i$ and $z_j$ are centered values on observation $i$ and $j$, $w_{ij}$ i
 
 Because a specific local Moran's I value can be obtained purely by chance, its statistical significance must be assessed before an observation is interpreted as belonging to a genuine cluster. Significance is typically expressed as a p-value under the null hypothesis that the attribute values are randomly distributed in space and carry no information about their surroundings. The p-value is commonly obtained through a permutation procedure, when the observed values are repeatedly reassigned at random to locations (usually 999 times, esda default), local Moran's I is recalculated for each permutation, and the p-value is given by the proportion of permutations producing a value as extreme as, or more extreme than, the observed one. An observation is conventionally considered a significant part of a spatial cluster if $p<0.05$ . In practice, results are often visualized as LISA cluster maps, in which only statistically significant HH, LL, HL, and LH clusters are highlighted, while non-significant observations are shown in grey.
 
-![LISA cluster map.](figures/lisa.png){#fig-lisa_example fig-align="center" width="80%"}
+![US vote map (left) and identified LISA clusters (right).](figures/lisa_and_vote_share_map.png){#fig-lisa_example fig-align="center" width="100%"}
 
 On LISA cluster maps of real-world data, the majority of significant clusters are typically HH or LL, compared to few HL or LH outliers, which is consistent with Tobler's first law of geography - similar values tend to occur near one another.
 
@@ -223,7 +223,7 @@ The algorithm randomly picks one of the $p$ regions (called $c$) and identifies 
 
 If both conditions are satisfied, $i$ is added to region $c$ and $C$ is updated to include any new neighbours introduced by the move. This process continues until $C$ is empty. This full cycle over all regions is repeated from the beginning until a complete pass produces no accepted swaps, at which point no further improvement in total $SSD$ is possible.
 
-AZP does not guarantee a global optimum and can easily become trapped in a local optimum @anselin2024 . It therefore has several additional parameters that can improve results. It therefore has several additional parameters that can improve results. One such parameter is the *search option*. The default greedy local search only accepts improving moves. *Tabu search* augments this by maintaining a list of recently moved observations that are temporarily prohibited from returning to their origin region, preventing cycling and allowing the algorithm to escape local optima. *Simulated annealing* uses the Metropolis algorithm, proposed by @metropolis1953, to accept non-improving moves with a probability that decreases over time, introducing controlled randomness early in the search to escape local optima while converging towards a stable solution in later iterations.
+AZP does not guarantee a global optimum and can easily become trapped in a local optimum @anselin2024. It therefore has several additional parameters that can improve results. One such parameter is the *search option*. The default greedy local search only accepts improving moves. *Tabu search* augments this by maintaining a list of recently moved observations that are temporarily prohibited from returning to their origin region, preventing cycling and allowing the algorithm to escape local optima. *Simulated annealing* uses the Metropolis algorithm, proposed by @metropolis1953, to accept non-improving moves with a probability that decreases over time, introducing controlled randomness early in the search to escape local optima while converging towards a stable solution in later iterations.
 
 The other parameter concerns the *initial regionalization*. *Automatic Regionalization with Initial Seed Location* (ARiSeL) constructs better initial solutions by selecting seeds based on their spatial separation and attribute dissimilarity using a K-means++ procedure, rather than relying on random placement. Another option is to supply the output of a hierarchical method such as SCHC or SKATER as the starting assignment. Since hierarchical methods cannot rearrange observations once they are placed in a branch, using their output as an AZP starting point allows boundary observations to be swapped and the solution refined [@anselin2024].
 
@@ -233,7 +233,9 @@ Proposed by @duque2012, the max-$p$ regions problem seeks to find the maximum nu
 
 The heuristic consists of three phases. In the growth phase, an observation is randomly selected as a seed. Unassigned neighbours are added one at a time, always choosing the neighbour with the largest threshold attribute, until the cumulative value of the growing region meets the threshold. A new seed is then selected and the process repeats. Any seed whose own attribute value already exceeds the threshold immediately forms a singleton region. Observations that cannot be incorporated, because all their neighbours are already assigned or the minimum bound cannot be reached, are placed in the enclave. The growth phase is repeated many times from different random starting points; only the layouts achieving the largest $p$ are retained.
 
-In the enclave assignment phase, every observation in the enclave is allocated to a neighbouring existing region so as to minimize the increase in total within-cluster $SSD$ (see @eq-ssd). If multiple enclave observations can each join different neighbouring regions, all combinations are evaluated and the assignment minimizing total $SSD$ is chosen.
+In the enclave assignment phase, every observation in the enclave is allocated to a neighbouring existing region so as to minimize the increase in total within-cluster $SSD$ (see @eq-ssd).
+
+<!-- If multiple enclave observations can each join different neighbouring regions, all combinations are evaluated and the assignment minimizing total $SSD$ is chosen. -->
 
 The outcome of the first two phases is the initial feasible solution, which is then refined using the same search procedures as AZP - greedy local search, tabu search, or simulated annealing, to minimize total $SSD$ while preserving contiguity and the minimum size constraint. As with AZP, max-p results are highly sensitive to parameter choices: the minimum bound value, the number of growth iterations, and the chosen search strategy, therefore extensive experimentation is recommended [@anselin2024].
 
@@ -469,15 +471,55 @@ For each zonation, five independent sets of attribute values were generated foll
 
 ## Spatial autocorrelation
 
-### Global
+tolik a tolik vypoctu bylo performed
 
--poster
+### Synthetic data
 
-### Local
+The kernel density plot (@fig-kdeplot) demonstrates that deviation from true Moran's I is symmetrical and normally distributed, indicating roughly equal occurrence of positive and negative deviations. Therefore from now on, we can work only with absolute deviation as it doesnt influence.. Interesting observation is, that positive nor negative correlation dont have the tendency to aim towards randomness as edges are being deleted.
 
--ubytek lisa clusteru?
+![Kernel density plot of deviations from true Moran's I.](figures/moran_deviation_kde_combined.png){#fig-kdeplot fig-align="center" width="60%"}
+
+Dataset size exerts the clearest influence on absolute deviation, with larger datasets demonstrating markably greater resilience to topology corruption (see @fig-shape_size_comapairson). For $n=400$, maximum deviation slightly exceeds 0.2, even under the most severe corruption levels examined (70-80% edges missing), whereas for $n=25$ it can reach up to 0.5 and even over 0.7 in the most extreme cases, which can critically mislead interpretation of the estimated spatial autocorrelation.
+
+@fig-shape_size_comapairson also shows that lattice shape, which primarily distinguishes the average number of neighbors per node, does not exert a comparably significant influence on the resulting deviations. Finally, across all lattice sizes, absolute deviation increases approximately linearly with the proportion of missing edges, with no distinct thresholds or stabilization points evident in the data.
+
+![Boxplots comparing absolute deviation of $I$ based on the size and type of lattice used. Filtered to random graph corruption.](figures/size_boxplot_grouped_by_shape.png){#fig-shape_size_comapairson fig-align="center"}
+
+@fig-moran_vulnerability shows that random spatial patterns (true Moran's $I$ close to zero) are comparatively the most vulnerable to topology corruption, with maximum absolute deviations exceeding 0.3. As $I$ increases, estimates become increasingly robust. For positive autocorrelation, extreme absolute deviations do not exceed 0.2, and for values between 0.7 and 0.9 they remain below 0.1. Strongly negatively autocorrelated patterns were generated only for the square lattice, as it is only in this configuration that such extreme negative values could be sustained. Relative to their positive counterparts, these negative patterns exhibit somewhat larger deviations. Across all bins, the 75th percentile does not exceed 0.07 absolute deviation, indicating that typical estimation error remains small even under substantial topology corruption. However, the occurrence of larger deviations in the upper tail indicates that isolated cases of substantial deviation remain possible and should not be dismissed when performing spatial autocorrelation analysis.
+
+![Boxplots of absolute deviation of Global Moran's $I$ under different true $I$s. Filtered to random graph corruption and $n=100$.](figures/moran_value_vulnerability100_boxplot.png){#fig-moran_vulnerability fig-align="center" width="80%"}
+
+![Edge removal method compaoirson.](figures/method_compairson.png){#fig-global_method_compairson fig-align="center"}
+
+![Scatterplots of true vs. calculated Moran's $I$ under graph corruption, by percentage of missing edges. Filtered to $n=100$, hexagonal lattice, random edge removal.](figures/p_values4.png){fig-align="center" width="66%"}
+
+![Missclassified statistical significance of Global Moran's $I$. Filtered to random edge removal.](figures/p_values_two_panels_by_error_type.png){#fig-miss_sig fig-align="center" width="66%"}
+
+![Significance misclassification rate per size. Data filtered to random edge removal.](figures/moran_falsesig_falsenonsig_rate_by_size_3panel.png){#fig-sig_hist fig-align="center"}
+
+### Real data
+
+![Moran's I deviation on real data under graph corruption (upper left, upper right, lower left) and $p$-value change of Guerry dataset (lower right). Each run is plotted separately. Data filtered to random edge removal.](figures/sac_real_overview.png){#fig-sac_real fig-align="center" width="66%"}
+
+-local a boders rmoval nezaslouzi plot, protoze max deviation je tam tak 0.003. zaslouzi si max tak odstavec
 
 ## Regionalization
+
+![Boxplots of computed ARI between ground truth and regionalization techniques under graph corruption. Data filtered to random edge removal.](figures/reg_boxplots.png){#fig-reg_boxplots fig-align="center"}
+
+![](figures/reg_real_examples.png)
+
+![Method of edge removal compairson on regionalization techniques. Binned by 1% of missing edges.](figures/reg_method_compairson_binned1.png){#fig-reg_nevim fig-align="center" width="66%"}
+
+![Average ARI on real data.](figures/reg_real_all.png){#fig-reg_real_all fig-align="center"}
+
+![ARI example runs.](figures/reg_real_examples.png){#fig-reg_examples fig-align="center"}
+
+![Example](figures/reg_ceara_zika_map.png){#fig-reg_zika}
+
+![](figures/reg_chicago_map.png)
+
+![](figures/reg_south_map.png)
 
 -skater je vic sensitive u synthetic dat, ale u real je to dost random
 
