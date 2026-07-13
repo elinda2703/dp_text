@@ -475,29 +475,61 @@ tolik a tolik vypoctu bylo performed
 
 ### Synthetic data
 
-The kernel density plot (@fig-kdeplot) demonstrates that deviation from true Moran's I is symmetrical and normally distributed, indicating roughly equal occurrence of positive and negative deviations. Therefore from now on, we can work only with absolute deviation as it doesnt influence.. Interesting observation is, that positive nor negative correlation dont have the tendency to aim towards randomness as edges are being deleted.
+To get an overview of how size, average number of neigbours and initial spatial autocorrelation influences the deviations of $I$ and its significance under graph corruption, random edge removal was considered. For each lattice type and size, 20 graphs were considered, including the true graph (ground truth) and the most corrupted possible graph for each spatial configuration, those in between represent linear progression of missing edges.
+
+The kernel density plot (@fig-kdeplot) demonstrates that deviation from true Moran's I is symmetrical and normally distributed, indicating roughly equal occurrence of positive and negative deviations. Therefore from now on, we can work only with absolute deviation as it doesnt influence..
 
 ![Kernel density plot of deviations from true Moran's I.](figures/moran_deviation_kde_combined.png){#fig-kdeplot fig-align="center" width="60%"}
 
 Dataset size exerts the clearest influence on absolute deviation, with larger datasets demonstrating markably greater resilience to topology corruption (see @fig-shape_size_comapairson). For $n=400$, maximum deviation slightly exceeds 0.2, even under the most severe corruption levels examined (70-80% edges missing), whereas for $n=25$ it can reach up to 0.5 and even over 0.7 in the most extreme cases, which can critically mislead interpretation of the estimated spatial autocorrelation.
 
-@fig-shape_size_comapairson also shows that lattice shape, which primarily distinguishes the average number of neighbors per node, does not exert a comparably significant influence on the resulting deviations. Finally, across all lattice sizes, absolute deviation increases approximately linearly with the proportion of missing edges, with no distinct thresholds or stabilization points evident in the data.
+@fig-shape_size_comapairson also shows that lattice shape, which primarily distinguishes the average number of neighbors per node (cardinality), exerts a slight influence on the resulting deviations, where datasets with smaller cardinalities (square lattice) are more vulnerable, but compared to size, it does not affect it as much. Finally, across all lattice sizes, absolute deviation increases approximately linearly with the proportion of missing edges, with no distinct thresholds or stabilization points evident in the data.
 
 ![Boxplots comparing absolute deviation of $I$ based on the size and type of lattice used. Filtered to random graph corruption.](figures/size_boxplot_grouped_by_shape.png){#fig-shape_size_comapairson fig-align="center"}
 
-@fig-moran_vulnerability shows that random spatial patterns (true Moran's $I$ close to zero) are comparatively the most vulnerable to topology corruption, with maximum absolute deviations exceeding 0.3. As $I$ increases, estimates become increasingly robust. For positive autocorrelation, extreme absolute deviations do not exceed 0.2, and for values between 0.7 and 0.9 they remain below 0.1. Strongly negatively autocorrelated patterns were generated only for the square lattice, as it is only in this configuration that such extreme negative values could be sustained. Relative to their positive counterparts, these negative patterns exhibit somewhat larger deviations. Across all bins, the 75th percentile does not exceed 0.07 absolute deviation, indicating that typical estimation error remains small even under substantial topology corruption. However, the occurrence of larger deviations in the upper tail indicates that isolated cases of substantial deviation remain possible and should not be dismissed when performing spatial autocorrelation analysis.
+@fig-moran_vulnerability shows that random spatial patterns (true Moran's $I$ close to zero) are comparatively the most vulnerable to topology corruption, with maximum absolute deviations exceeding 0.3. As $I$ increases, estimates become increasingly robust. For positive autocorrelation, extreme absolute deviations do not exceed 0.2, and for values between 0.7 and 0.9 they remain below 0.1. Strongly negatively autocorrelated patterns were generated only for the square lattice, as it is only in this configuration that such extreme negative values could be sustained. Relative to their positive counterparts, these negative patterns exhibit somewhat larger deviations
 
 ![Boxplots of absolute deviation of Global Moran's $I$ under different true $I$s. Filtered to random graph corruption and $n=100$.](figures/moran_value_vulnerability100_boxplot.png){#fig-moran_vulnerability fig-align="center" width="80%"}
 
+Across all bins, the 75th percentile does not exceed 0.07 absolute deviation, indicating that typical estimation error remains small even under substantial topology corruption. However, the occurrence of larger deviations in the upper tail indicates that isolated cases of substantial deviation remain possible and should not be dismissed when performing spatial autocorrelation analysis.
+
 ![Edge removal method compaoirson.](figures/method_compairson.png){#fig-global_method_compairson fig-align="center"}
 
-![Scatterplots of true vs. calculated Moran's $I$ under graph corruption, by percentage of missing edges. Filtered to $n=100$, hexagonal lattice, random edge removal.](figures/p_values4.png){fig-align="center" width="66%"}
+@fig-p-scatter presents a scatterplot of true Moran's I values against their corrupted counterparts across different levels of graph corruption, demonstrated on hexagonal lattice of size 100. It confirms the symmetry of deviations observed in @fig-kdeplot and indicates that datasets exhibiting no significant spatial pattern are more vulnerable to misclassification.
 
-![Missclassified statistical significance of Global Moran's $I$. Filtered to random edge removal.](figures/p_values_two_panels_by_error_type.png){#fig-miss_sig fig-align="center" width="66%"}
+![Scatterplots of true vs. calculated Moran's $I$ under graph corruption, by percentage of missing edges. Filtered to $n=100$, hexagonal lattice, random edge removal.](figures/p_values4.png){#fig-p_scatter fig-align="center" width="66%"}
+
+@fig-p_scatter also illustrates how significance status changes relative to the critical value at $\alpha =0.05$. Specifically, it shows that whether a dataset is misclassified is not directly determined by the degree of corruption itself, but rather by whether the corrupted value crosses a critical threshold.
+
+The false non-significance rate increases with corruption level, as illustrated in @fig-miss_sig (right), since more extensive edge removal raises the probability that a given estimate will cross the significance threshold. The magnitude of this rate also reflects dataset size: larger datasets are more stable, and therefore less vulnerable to misclassification. Conversely, average cardinality does not correspond to greater robustness the way it does for $I$ values. Although $I$ deviates more strongly under corruption when cardinality is lower, lattices with lower average cardinality (e.g., square) show lower misclassification rates in @fig-miss_sig (right), while those with higher average cardinality (e.g., hexagonal) show higher rates.
+
+The rate of false significance (@fig-miss_sig, left) is considerably lower than that of false non-significance. It increases up to approximately 15–20% missing edges across all lattice types and dataset sizes, after which it plateaus and fluctuates around a rate of 8%, with no apparent influence from dataset size or cardinality.
+
+![Missclassified statistical significance of Global Moran's $I$. Filtered to random edge removal.](figures/p_values_two_panels_by_error_type.png){#fig-miss_sig fig-align="center" width="100%"}
+
+The critical $I$ values that set the significance threshold can be estimated analytically using the moments derived by Cliff and Ord (1981). Under the randomization assumption, the expectation and variance of $I$ are:
+
+$$E[I] = -\frac{1}{n-1}$$
+
+$$\text{Var}(I) = \frac{n\left[(n^2-3n+3)S_1 - nS_2 + 3S_0^2\right] - b_2\left[(n^2-n)S_1 - 2nS_2 + 6S_0^2\right]}{(n-1)(n-2)(n-3)S_0^2} - E[I]^2$$
+
+where $S_0 = \sum_{i}\sum_{j} w_{ij}$ is the total weight mass, $S_1 = \frac{1}{2}\sum_i\sum_j(w_{ij}+w_{ji})^2$ and $S_2 = \sum_i\left(\sum_j w_{ij} + \sum_j w_{ji}\right)^2$ are weight statistics capturing the structure of $W$, and $b_2$ is the kurtosis of the data. Critically, $S_0$, $S_1$, and $S_2$ depend on the structure of $W$, so the threshold is fully determined by $W$'s connectivity pattern together with one data-dependent scalar, $b_2$. The critical values follow directly by inverting the test statistic:
+
+$$I_{crit} = E[I] \pm z_\alpha\sqrt{\text{Var}(I)}$$
+
+As edges are removed, $S_1$ and $S_2$ shift in a way that increases $\text{Var}(I)$, pushing $I'_{crit}$ further from zero - sparser weight matrices produce a wider, harder-to-clear significance band (Bivand, Müller, and Reder 2009; Cliff and Ord 1981). This means graph corruption has two distinct effects: it perturbs the calculated $I'$ away from its true value, and it independently shifts the critical threshold itself.
+
+Significance loss occurs when \$\|I\| \> \|I\_{crit}\|\$ and \$\|I'\| \< \|I'\_{crit}\|\$. As corruption increases, \$\|I'\_{crit}\|\$ grows, causing a larger share of computed values \$I'\$ to fall within the widened non-significant interval. Notably, even where \$I'\$ moves away from zero, \$I'\_{crit}\$ may still exceed it, since the threshold shifts independently of the realized value of \$I'\$.
+
+This mechanism operates in the opposite direction for significance gain, which occurs when \$\|I\| \< \|I\_{crit}\|\$ and \$\|I'\| \> \|I'\_{crit}\|\$. If \$I'\$ moves toward zero under corruption, the observation necessarily remains non-significant. If \$I'\$ moves away from zero, it may in principle exceed the threshold; however, this outcome is comparatively rare, as \$I'\_{crit}\$ is simultaneously shifting in the same direction. This asymmetry explains why significance gain occurs substantially less frequently than significance loss.
+
+The occurence of significance loss and gain is illustrated in @fig-sig_hist.
 
 ![Significance misclassification rate per size. Data filtered to random edge removal.](figures/moran_falsesig_falsenonsig_rate_by_size_3panel.png){#fig-sig_hist fig-align="center"}
 
 ### Real data
+
+The deviations of $I$ for real datasets
 
 ![Moran's I deviation on real data under graph corruption (upper left, upper right, lower left) and $p$-value change of Guerry dataset (lower right). Each run is plotted separately. Data filtered to random edge removal.](figures/sac_real_overview.png){#fig-sac_real fig-align="center" width="66%"}
 
