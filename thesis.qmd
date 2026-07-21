@@ -16,19 +16,17 @@ This subchapter provides an overview of the core spatial statistical methods emp
 
 ### Spatial weights
 
-Spatial weights, formalized by the seminal work by Cliff & Ord (1973), connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity) among others [@reyGeographicDataScience2023]. Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance). We will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
+Spatial weights, formalized by the seminal work by @cliff1973spatial, connect objects in geographic space using the spatial relationship between them. They serve for defining spatial neighbourhoods and geographically relevant sites. These relationships can be distance-based (k-nearest neigbours, distance bands), based on a membership in a geographic group (block weights) or adjacency-based (contiguity) among others [@reyGeographicDataScience2023]. Each pair of observations is assigned a weight, which can either be boolean (1 for a spatial relationship, 0 otherwise), or specific numerical value (e. g. inverse distance). We will further focus on contiguity-based spatial weights, as those can be directly impacted by violating polygonal coverage.
 
-Spatial weights can be represented as a matrix, denoted as $W$, which is a $N \times N$ matrix, where $N$ is the number observations. Each element $w_{ij}$ corresponds to the weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal [@rey2022PySAL], geoda [@anselin2006GeoDa] or spdep [@spdep] implement sparse matrix, which stores only non-zero elements.
+Spatial dependence is typically encoded in a spatial weights matrix $W$, an $N \times N$ matrix where $N$ denotes the number of observations [@reyGeographicDataScience2023]. Each element $w_{ij}$ corresponds to the weight between observations $i$ and $j$, that is, how much observation $j$ influences observation $i$. Because geographic datasets are rarely fully interconnected, most elements in $W$ are 0. To ensure computational and memory efficiency, tools like libpysal [@rey2010], geoda [@anselin2006GeoDa] or spdep [@spdep] implement sparse matrix, which stores only non-zero elements.
 
 ![Rook contiguity graph.](figures/usa_graph.png){#fig-usa_graph fig-align="center" width="80%"}
 
 Spatial weight matrix can be understood as a graph adjacency matrix, therefore spatial graph (see @fig-usa_graph) is another representation of spatial weights. A weighted graph is defined as an ordered triple $G = (V,E,\omega)$, where $V$ is a set of nodes, $E$ is a set of edges representing connectivity between nodes and $\omega:E \to \mathbb{R}$ is a function that assigns real numbers (weights) to edges. Two nodes $i, j \in V$ are adjacent if there exists an edge $\{i, j\} \in E$ connecting them. Each node represents an observation and a weighted edge denotes the relationship between observations. Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph.
 
-<!--- Fundamentally, spatial weights matrices and graphs store the exact same topological information; the matrix is simply the algebraic representation of the spatial graph. Computational libraries accommodate both structures and allow for conversion between them (@rey2022PySAL, @spdep). While the matrix is the standard for calculating spatial autocorrelation formulas (@moran1950, @geary) and other spatial statistics, the graph provides more intuitive framework for clustering, where operations like minimum spanning trees and graph partitioning are necessary (@AssuncaoSkater, @duque2012). --->
-
 #### Contiguity {#sec-contiguity}
 
-Spatial weight matrices are commonly defined trough contiguity, meaning that polygons that share a mutual border are considered to be spatial neigbours. However, this definiton isn't rigorous, leading to several formal interpretations of contiguity. The primary types of contiguity are named analogically to the movements of chess pieces:
+Spatial weight matrices of geographic polygonal data are commonly defined trough contiguity [@anselin2014], meaning that polygons that share a mutual border are considered to be spatial neigbours. However, this definiton isn't rigorous, leading to several formal interpretations of contiguity. The correct detection heavily relies on topological consistency of the polygonal dataset. The primary types of contiguity are named analogically to the movements of chess pieces:
 
 -   *Rook*: The polygons are considered neighbours if they share an edge (a boundary of non-zero length).
 
@@ -36,17 +34,17 @@ Spatial weight matrices are commonly defined trough contiguity, meaning that pol
 
 -   *Bishop*: The polygons are considered neighbours if they share only a point, but no edges. It represents the logical difference between *Queen* and *Rook* contiguity (*Queen* - *Rook).*
 
-Rook and Queen contiguity matrices dominate in spatial statistics. They are the only valid choice for regionalization methods and are the default for spatial autocorrelation metrics. Bishop is rarely used on its own, but sometimes it is used for hybrid weights. Beyond immediate neighbours, contiguity can be expanded to higher order contiguity weights (neigbours of neigbours), often used in spatial data modelling.
+Rook and Queen contiguity matrices dominate in spatial statistics as they are the only valid choice for regionalization methods [@anselin2024] and are the default for spatial autocorrelation metrics [@cliff1973spatial]. Bishop is rarely used on its own, but sometimes it is used for hybrid weights, which combine more spatial operations to define neighbourhoods [@reyGeographicDataScience2023].
 
-If we assume a binary contiguity $W$, where $w_{ij}=w_{ji}=1$ if observation $i$ and $j$ are neighbours and $w_{ij}=w_{ji}=0$ if non-neighbours, $W$ is symmetrical and the graph can be represented
+Beyond immediate neighbours, contiguity can be expanded to higher order contiguity weights (neigbours of neigbours), often used in spatial data modelling....
 
-<!---Euler in his Konigsberg bridges solution relied on the concept of a node degree - the number of edges incident to a given node, observing that the problem has a solution only if all the nodes (landmasses) have an even degree (are connected by an even number of bridges). --->
+Contiguity weights are symmetric by construction, i.e. $w_{ij} = w_{ji}$, so that the corresponding graph can be considered undirected [@cliff1973spatial]. However, in practice, it is common to row-standardize $W$ so that each row sums to one, which breaks the symmetry as it turns $w_{ij}$ into the share of $i$'s total connectivity attributable to $j$. Row-standardization is the default for most spatial autocorrelation coefficients and spatial econometric models [@anselin1988; @lesage2009; @anselin2014].
 
 ### Spatial autocorrelation
 
-According to Tobler's Firsts law of geography "everything is related to everything else, but near things are more related than distant things". This principle underlies the concept of spatial autocorrelation (SAC) - the degree to which the value of an observation resembles the values of its spatial neighbours. Under a positive SAC, observations that are geographically close have similar values and tend to cluster. Under a negative SAC, similar values tend to be spatially dispersed rather than clustered, resembling a checkerboard pattern, visualized in @fig-sac. This chapter provides an overview of the often used sac indicators such as Moran's $I$ [@moran1950] , Geary's $C$ [@geary] and Gettis-Ord's $G$ [@getis1992].
+According to Tobler's Firsts law of geography "everything is related to everything else, but near things are more related than distant things". This principle underlies the concept of spatial autocorrelation (SAC) - the degree to which the value of an observation resembles the values of its spatial neighbours. Under a positive SAC, observations that are geographically close have similar values and tend to cluster. Under a negative SAC, similar values tend to be spatially dispersed rather than clustered, resembling a checkerboard pattern, visualized in @fig-sac. This chapter provides an overview of the often used spatial autocorrelation indicators such as Moran's $I$ [@moran1950] , Geary's $C$ [@geary] and Gettis-Ord's $G$ [@getis1992]. In the experimental part, Global Morans $I$ will be tested for robustness under topology corruption.
 
-![Spatial autocorrelation.](figures/sac.png){#fig-sac fig-align="center" width="80%"}
+![Different spatial autocorrelation patterns.](figures/sac.png){#fig-sac fig-align="center" width="80%"}
 
 #### Moran's I
 
@@ -56,19 +54,21 @@ $$
 y_{sl-i} = \sum_{j} w_{ij}y_j
 $$ {#eq-lag}
 
-where $w_{ij}$ is an element of $W$ capturing the spatial relationship between observations $i$ and $j$ and $y_j$ is the centered value of observation $j$. Common pratice is to row standartize $W$, so that the weights in each row sum to exactly one. Neighbours are most commonly defined using either Queen or Rook contiguity (see @sec-contiguity).
+where $w_{ij}$ is an element of row-standartized $W$ capturing the spatial relationship between observations $i$ and $j$ and $y_j$ is the centered value of observation $j$.
 
-![Moran's scatterplot.](figures/spatial_lag.png){#fig-moran_scatterplot fig-align="center" width="60%"}
+![Moran's scatterplot of median household income in Sacramento (see @sec-real_sac).](figures/spatial_lag.png){#fig-moran_scatterplot fig-align="center" width="60%"}
 
 On the Moran scatterplot, each observation is plotted with its centered value on the x-axis and its spatial lag on the y-axis. At the global level, the slope of the best-fit regression line through the scatterplot corresponds to the value of global Moran's I [@moran1950], the most widely used SAC statistic. It is defined as
 
-$$
-I = \frac{n}{\sum_i \sum_j w_{ij}} \frac{\sum_i \sum_j w_{ij} z_i z_j}{\sum_i z_i^2}
-$$ {#eq-global_i}
+$$ I = \frac{n}{S_0} \frac{\sum_i \sum_j w_{ij} z_i z_j}{\sum_i z_i^2}$$ {#eq-global_i}
 
-where $n$ is the number of observations, $w_{ij}$ is an element of $W$ and $z_i$ and $z_j$ is the standartized values of observation $i$ and $j$.
+where $n$ is the number of observations, $w_{ij}$ is an element of row-standartized $W$, $S_0$ represents the sum of all elements in $W$, and $z_i$ and $z_j$ is the standartized values of observation $i$ and $j$.
 
 The value of $I$ typically falls within the interval $[-1, 1]$. Values close to 1 indicate strong positive spatial autocorrelation, values close to -1 indicate strong negative spatial autocorrelation, and values close to 0 indicate a spatially random pattern.
+
+The $[-1, 1]$ range is a common approximation rather than a strict bound. @dejong1984 show that the true extrema of $I$ for a given weight matrix $W$ are not fixed constants, but a property of $W$ structure itself, related to its eigenvalues. In general, these bounds are not symmetric around 0. @dejong1984 attribute asymmetry in the extrema specifically to structural heterogeneity in the network, most notably boundary effects, where peripheral units have systematically fewer neighbours than interior ones.
+
+A specific structural artefact of $W$ is the isolate, an observation with no neighbours. Isolates arise either from genuine real-world objects (e.g. islands) or from an underlying topological inconsistency in the source data [@anselin2014]. Their presence formally violates the row-standardization of $W$ where every other row is normalized to sum to 1, whereas an isolate's row sums to 0 by definition. This inflates the $N/S_0$ scaling term beyond what the connected portion of the network can actually support, as $S_0$ decreases with each additional isolate while $N$ remains fixed. On these grounds, @anselin2014 recommend that isolates be excluded from both the numerator and the denominator of $I$ altogether, rather than retained as zero-weight rows, not to artificially distort the statistic. Therefore, in the experimental part, topology will be artificially corrupted by removing edges from $W$, while maintaining the no isolates condition.
 
 At the local level, the four quadrants of the Moran scatterplot correspond to four characteristic spatial situations, distinguished by the signs of an observation's value and its spatial lag:
 
@@ -80,7 +80,7 @@ At the local level, the four quadrants of the Moran scatterplot correspond to fo
 
 -   High-Low (HL): an observation with a below-average value surrounded by neighbours with above-average values - a low-value outlier within a high-value neighbourhood.
 
-The quadrant to which an observation belongs can be read directly from the signs of its centered value and its spatial lag. This classification alone does not indicate whether the observation belongs to that category because of a genuine spatial pattern or by chance. To make this distinction, local indicators of spatial association (LISA) are used together with a test of statistical significance. The most commonly used local indicator is local Moran's I, defined as
+The quadrant to which an observation belongs can be read directly from the signs of its centered value and its spatial lag. This classification alone does not indicate whether the observation belongs to that category because of a genuine spatial pattern or by chance. To make this distinction, local indicators of spatial association (LISA) [@anselinLocalIndicatorsSpatial1995] are used together with a test of statistical significance [@reyGeographicDataScience2023]. The most commonly used local indicator is local Moran's $I$ [@wolf2026robust], defined as
 
 $$
 I_i = \frac{z_i}{m_2} \sum_{j} w_{ij}z_j \; ; \; m_2 = \frac{\sum_i z_i^2}{n}
@@ -88,23 +88,23 @@ $$ {#eq-local_i}
 
 where $z_i$ and $z_j$ are centered values on observation $i$ and $j$, $w_{ij}$ is the spatial weight for a pair of observations $i$ and $j$ and $m_2$ is the second moment (variance). A positive value of $I_i$​ indicates that observation $i$ belongs to an HH or LL quadrant, whereas a negative value indicates that it belongs to an HL or LH quadrant.
 
-Because a specific local Moran's I value can be obtained purely by chance, its statistical significance must be assessed before an observation is interpreted as belonging to a genuine cluster. Significance is typically expressed as a p-value under the null hypothesis that the attribute values are randomly distributed in space and carry no information about their surroundings. The p-value is commonly obtained through a permutation procedure, when the observed values are repeatedly reassigned at random to locations (usually 999 times, esda default), local Moran's I is recalculated for each permutation, and the p-value is given by the proportion of permutations producing a value as extreme as, or more extreme than, the observed one. An observation is conventionally considered a significant part of a spatial cluster if $p<0.05$ . In practice, results are often visualized as LISA cluster maps, in which only statistically significant HH, LL, HL, and LH clusters are highlighted, while non-significant observations are shown in grey.
+Because a specific local Moran's $I$ value can be obtained purely by chance, its statistical significance must be assessed before an observation is interpreted as belonging to a genuine cluster. Significance is typically expressed as a pseudo $p$-value under the null hypothesis that the attribute values are randomly distributed in space and carry no information about their surroundings. The $p$-value is commonly obtained through a permutation procedure, when the observed values are repeatedly reassigned at random to fixed locations (usually 999 times, `esda` default) [@rey2010], local Moran's $I$ is recalculated for each permutation, and the $p$-value is given by the proportion of permutations producing a value as extreme as, or more extreme than, the observed one. An observation is conventionally considered a significant part of a spatial cluster if $p<0.05$ . In practice, results are often visualized as LISA cluster maps, in which only statistically significant HH, LL, HL, and LH clusters are highlighted, while non-significant observations are shown in grey.
 
-![US vote map (left) and identified LISA clusters (right).](figures/lisa_and_vote_share_map.png){#fig-lisa_example fig-align="center" width="100%"}
+![US presidential election map (left) and identified LISA clusters (right).](figures/lisa_and_vote_share_map.png){#fig-lisa_example fig-align="center" width="100%"}
 
 On LISA cluster maps of real-world data, the majority of significant clusters are typically HH or LL, compared to few HL or LH outliers, which is consistent with Tobler's first law of geography - similar values tend to occur near one another.
 
-#### Geary C
+#### Geary $C$
 
-Geary's C is another widely used measure of spatial autocorrelation. Its global form is given by
+Geary's $C$ [@geary] is another widely used measure of spatial autocorrelation [@reyGeographicDataScience2023]. Its global form is given by
 
 $$
 C = \frac{(n - 1)}{2 \sum_i \sum_j w_{ij}} \frac{\sum_i \sum_j w_{ij} (y_i - y_j)^2}{\sum_i (y_i - \bar{y})^2}
 $$ {#eq-global_c}
 
-where $n$ is the number of observations, $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$, respectively and $\bar{y}$ is the mean value of the whole dataset. Unlike Moran's I, which uses cross-products on the standartized values, Geary's C computes differences of raw values, which in case of very different neigbouring values, it inflates the $C$ value, making it more sensitive to appearance of local negative SAC. $C$ is bounded below by zero, which indicates strong positive SAC, values close to one indicate random spatial pattern, and any values markably larger than one indicate negative SAC.
+where $n$ is the number of observations, $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$, respectively and $\bar{y}$ is the mean value of the whole dataset. Unlike Moran's $I$, which uses cross-products on the standardized values, Geary's $C$ computes differences of raw values, which in case of very different neigbouring values inflates the $C$ value, making it more sensitive to appearance of local negative SAC. $C$ is bounded below by zero, which indicates strong positive SAC, values close to one indicate random spatial pattern, and any values markably larger than one indicate negative SAC.
 
-The local version, Local Geary C, proposed by Anselin, is defined for each observation $i$ as:
+The local version, Local Geary's $C$, proposed by @anselinLocalIndicatorsSpatial1995, is defined for each observation $i$ as:
 
 $$
 c_i = \sum_j w_{ij}(y_i - y_j)^2
@@ -112,7 +112,7 @@ $$ {#eq-local_c}
 
 where $w_{ij}$ is the spatial weight for a pair of observation $i$ and $j$, $y_i$ and $y_j$ are raw values of observations $i$ and $j$,. High values of local $c_i$ highlight areas of abrupt changes in value. As with any LISA, the magnitude of $c_i$ is less important on its own than its statistical significance, which determines whether the identified local pattern is genuine.
 
-#### Gettis Ord G
+#### Gettis Ord $G$
 
 Proposed by @getis1992, the local $G$ is an indicator of positive spatial autocorrelation. It can be defined in two ways, $G_i$ excludes observation's $i$ own value, wheres $G_i^*$ includes it:
 
@@ -120,44 +120,46 @@ $$ G_i = \frac{\sum_{j \neq i} w_{ij} x_j}{\sum_{j \neq i} x_j},G_i^* = \frac{\s
 
 where $w_{ij}$ is the weight between observation $i$ and $j$. $G$ captures the overall degree of positive spatial autocorrelation, where high $G$ values are associated with hot spots (areas with homogenously high values) and low values are associated with cold spots (areas with homogenously low values).
 
-Getis-Ord G is complementary to local Moran's I. Local Moran's I primarily distinguishes between spatial clusters (HH/LL) and spatial outliers (HL/LH), but a positive value of local Moran's I does not by itself reveal whether the underlying cluster consists of high or low values. $G$ is specifically designed to make this distinction, identifying whether a concentration of similar values forms a hot spot or a cold spot. However, because $G_i$ and $G_i^*$​ are computed from sums of raw, non-negative attribute values rather than centered or standardized ones, they cannot detect negative spatial autocorrelation.
+Getis-Ord $G$ is complementary to local Moran's $I$ [@reyGeographicDataScience2023]. Local Moran's $I$ primarily distinguishes between spatial clusters (HH/LL) and spatial outliers (HL/LH), but a positive value of local Moran's I does not by itself reveal whether the underlying cluster consists of high or low values. $G$ is specifically designed to make this distinction, identifying whether a concentration of similar values forms a hot spot or a cold spot. However, because $G_i$ and $G_i^*$​ are computed from sums of raw, non-negative attribute values rather than centered or standardized ones, they cannot detect negative spatial autocorrelation [@anselin2024introduction].
+
+As this chapter illustrates, spatial autocorrelation coefficients are fundamentally dependent on the specification of the spatial weights matrix $W$, which enters directly into their computation. This thesis focuses on how the removal of edges from $W$, representing topological errors in a polygonal dataset, affects the behaviour of the resulting statistic, specifically global Moran's $I$.
 
 ### Regionalization
 
-Regionalization is the process of creating regions [@duque2007]. It is essentially grouping similar observations together, which we recognize as clustering, but with a spatial constraint that two observations (polygons) can be in the same cluster only if they share a border - contiguity. Regionalization is therefore known as spatially constrained clustering.
+Regionalization consists of grouping similar observations together, which we recognize as clustering, but with a spatial constraint that two observations (polygons) can be in the same cluster only if they share a border - contiguity. Regionalization is therefore known as spatially constrained clustering.
 
 The objective of any clustering method is to minimize the dissimilarity within each cluster. The overall dissimilarity of a dataset is described with the sum of all pairwise distances $T$:
 
 $$T = \frac{1}{2} \sum_{i=1}^{n} \sum_{j=1}^{n} d_{ij}$$ {#eq-reg_pairwise_dist}
 
-where $d_{ij}$ is a measure of dissimilarity. $T$ consists of two complementary components: within-cluster dissimilarity $W$ and between-cluster dissimilarity $B$, which can be evaluated during the clustering (regionalization) process:
+where $d_{ij}$ is a measure of dissimilarity. $T$ consists of two complementary components: within-cluster dissimilarity $V$ and between-cluster dissimilarity $B$, which can be evaluated during the clustering (regionalization) process:
 
-$$T=W+B$$ {#eq-sum_wb}
+$$T=V+B$$ {#eq-sum_wb}
 
 where
 
-$$W = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \in h} d_{ij}, \qquad B = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \notin h} d_{ij}$$ {#eq-wb_explained}
+$$V = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \in h} d_{ij}, \qquad B = \frac{1}{2} \sum_{h=1}^{k} \sum_{i \in h} \sum_{j \notin h} d_{ij}$$ {#eq-wb_explained}
 
-$W$ acts as a loss function, the goal of clustering is to minimize it. Some methods explicitly use $W$ as the clustering criterion (e. g. SCHC using Ward's linkage) whereas other methods use different metrics to approximate the goal.
+$W$ acts as a loss function, the goal of clustering is to minimize it. Some methods explicitly use $W$ as the clustering criterion whereas other methods use different metrics to approximate the goal.
 
-This chapter will serve as an overview of widely used methods discussed in @anselin2024. In the experimental part, two of those methods will be tested for robustness to polygonal coverage violations - SCHC and SKATER.
+By definition, regionalization methods are only meaningful on a connected $W$ consisting of a single component, since a region can only be built from spatial units that are reachable from one another through the contiguity graph [@yuan2015]. For this reason, the edge-removal procedure used in the experiments is constrained to preserve global connectivity: edges are only removed if their deletion does not disconnect $W$ into multiple components.
 
-#### SCHC {#sec-schc}
+This chapter will serve as an overview of widely used methods discussed in @anselin2024. In the experimental part, two of those methods will be tested for robustness to polygonal coverage violations - *Spatially constrained hierarchical clustering* (SCHC) and *Spatial 'K'luster Analysis by Tree Edge Removal* (SKATER),
+
+#### Spatially constrained hierarchical clustering {#sec-schc}
 
 Spatially constrained hierarchical clustering (SCHC) is a bottom-up approach, where each observation starts as its own cluster ($k=n$) and the clusters (or single observations) are being recursively merged based on their dissimilarity. It is based on agglomerative clustering with a contiguity constraint. It is a greedy algorithm, therefore once the observations are merged, they cannot be split in another iteration.
 
-Dissimilarity is computed based on definition of cluster distance in attribute space, referred to as linkage criterion. The four main types of linkages are:
+Dissimilarity is computed based on definition of cluster distance (Euclidean in vast majority of cases) in attribute space, referred to as linkage criterion. The four main types of linkages are:
 
 -   Single linkage: dissimilarity is the minimum distance between any pair of observations drawn from the two clusters.
 -   Complete linkage: dissimilarity is the maximum distance between any pair of observations drawn from the two clusters.
 -   Average linkage: dissimilarity is the average distance over all pairs of observations, one drawn from each cluster.
 -   Ward's linkage: dissimilarity is the increase in total within-cluster $SSD$ (see @eq-ssd) that would result from merging the two clusters.
 
-In vast majority of applications, dissimilarity is measured using Euclidean distance, which also required for the use of Ward's linkage, preferred for regionalization and will be further described in this chapter.
-
 The dissimilarity is denoted in dissimilarity matrix $D$, which is initially $n \times n$ as each observation starts as its own cluster. Each element $d_{ij}$ represents the dissimilarity between each pair of clusters (or single observations). At each step, the algorithm merges the two clusters/observations, that have the smallest dissimilarity (smallest value from $D$) under the contiguity constraint. After each merge, $D$ is updated using an updating formula, that computes the dissimilarities between the new cluster $C$ and a cluster $P$, reducing both dimensions of $D$ by one in each iteration.
 
-Ward's method, developed by @ward1963, explicitly minimizes the within-cluster dissimilarity (variance) defined trough the sum of squared errors ($SSD$). The input structure to use Ward's method is a $n \times p$ matrix $X$, where $n$ is the number of observations, $p$ is the number of variable and each element represents the (standartized) value of each variable for each observation. $SSD$ can be then formally defined as:
+Ward's method, developed by @ward1963, explicitly minimizes the within-cluster dissimilarity (variance) defined trough the sum of squared errors ($SSD$). The input structure to use Ward's method is a $n \times p$ matrix $X$, where $n$ is the number of observations, $p$ is the number of variable and each element represents the (standardized) value of each variable for each observation. $SSD$ can be then formally defined as:
 
 $$SSD = \sum_{i \in C} (x_i - \bar{x}_C)^2$$ {#eq-ssd}
 
@@ -165,7 +167,9 @@ where $x_i$ is a single row of $X$ (the vector of attributes for observation $i$
 
 $$d^2_{AB} = \frac{2n_A n_B}{n_A + n_B} \| \bar{x}_A - \bar{x}_B \|^2$$ {#eq-dissimilarity}
 
-After two clusters $A$ and $B$ are merged into a new cluster $C$, the dissimilarities between $C$ and every other cluster $P$ can be computed without recalculating centroids, using the Lance-Williams updating formula:
+Unlike average linkage, which computes the unweighted mean of pairwise distances between individual observations in the two clusters, Ward's linkage evaluates merges by their contribution to total within-cluster variance, weighting the squared centroid distance by the size-dependent factor $\frac{2n_An_B}{n_A+n_B}$. Because this factor grows with the product of the two cluster sizes, merges between two already large clusters are comparatively costly, whereas a small cluster can still be absorbed into a much larger one at low cost [@lance1967].
+
+After two clusters $A$ and $B$ are merged into a new cluster $C$, the dissimilarities between $C$ and every other cluster $P$ can be computed without recalculating centroids, using the Lance-Williams updating formula [@lance1967]:
 
 $$d^2_{PC} = \frac{n_A + n_P}{n_C + n_P} d^2_{PA} + \frac{n_B + n_P}{n_C + n_P} d^2_{PB} - \frac{n_P}{n_C + n_P} d^2_{AB}$$ {#eq-dissimilarity-updating}
 
@@ -175,9 +179,7 @@ In practice, the number of clusters (regions) $k$ is fixed in advance, and the m
 
 ![Dendrogram.](figures/dendrogram.png){#fig-dendrgram fig-align="center"}
 
--definovany jen pro 1 componentu?
-
-#### SKATER
+#### SKATER {#sec-skater}
 
 Spatial 'K'luster Analysis by Tree Edge Removal (SKATER), developed by @AssuncaoSkater, is another hierarchical regionalization method. Unlike SCHC, it is not agglomerative, but divisive. It is based on pruning (illustrated in @fig-skater_partitioning) a minimum spanning tree (MST) - a subgraph that connects all nodes of a graph using the subset of edges with the minimum possible total edge weight, without forming any cycles. The MST is usually built using Prim's or Kruskal's algorithm.
 
@@ -206,15 +208,17 @@ REDCAP introduces an additional parameter governing which observations are consi
 -   First-order: only edges connecting individual boundary observations from different clusters are considered.
 -   Full-order: All edges connecting observations from different clusters are considered. This is equivalent to standard SCHC.
 
-During each iteration, the pair of neigbouring clusters that has the smallest dissimilarity is merged, until all observations belong to one cluster and a complete dendrogram is built.
+In other words, first-order restricts attention to the observations actually sitting on the shared border between two clusters, while full-order treats the two clusters as if every cross-cluster pair were equally relevant.
 
-More importantly, during this agglomerative process, a MST is simultaneously constructed. At each iteration, when two clusters are selected for merging, an edge is added to the MST corresponding to the minimum-weight edge connecting boundary observations of the two merging clusters.
+At each iteration, the pair of neighbouring clusters with the smallest between-cluster dissimilarity is merged, exactly as in SCHC. This repeats until all observations belong to a single cluster and the dendrogram is complete.
+
+The key addition is that, at every merge, REDCAP also adds one edge to a minimum spanning tree (MST), specifically, the minimum-weight edge connecting the boundary observations of the two clusters being merged. By the time the dendrogram is finished, a full MST has been built alongside it, without any extra computation beyond the merging process itself.
 
 After the whole MST is built, the pruning process is the same as in SKATER, meaning $k-1$ edges are removed from the MST to reach $k$ regions. When REDCAP's First-Order Single-Linkage is used, the MST is identical the SKATER's one (as well as the resulting regionalization), as it implicitely uses Kruskal's algorithm.
 
 #### AZP
 
-Automatic Zoning Procedure (AZP) was proposed by @openshaw1977 and extended in @openshaw1995. Unlike the approaches discussed above, AZP is not hiearchical. It starts from a complete initial assignment of all $n$ observations to $p$ contiguous regions. For each region, the within-cluster $SSD$ is calculated using @eq-ssd. Total within $SSD$ corresponds to the sum of all within-cluster $SSD$s.
+Automatic Zoning Procedure (AZP) was proposed by @openshaw1977 and extended in @openshaw1995. Unlike the approaches discussed above, AZP is not hiearchical. It starts from a complete initial assignment of all $n$ observations to $p$ contiguous regions. For each region, the within-cluster $SSD$ is calculated using @eq-ssd. Total within-cluster $SSD$ corresponds to the sum of all within-cluster $SSD$s.
 
 The algorithm randomly picks one of the $p$ regions (called $c$) and identifies the set $C$ of all observations that belong to a different region but are spatially adjacent to at least one observation in $c$. From $C$, an observation $i$ is randomly selected as a candidate to leave its current region and join $c$. For that move to be accepted, two conditions must be satisfied:
 
@@ -385,101 +389,177 @@ The consistent finding is that random removal is comparatively harmless while re
 
 # Methodology
 
-![Methology pipeline.](figures/overall_draw.png){#fig-overall_pipeline fig-align="center" width="50%"}
+This simulation was implemented in Python using Jupyter notebooks, relying primarily on `pandas` and `geopandas` for tabular and geospatial data storage, `libpysal` for spatial weight matrix operations, and `matplotlib` for visualization. The overall workflow is shown in @fig-overall_pipeline. Computations were carried out on computer xxx with parameters xxx.
 
-## Grid generation
+![Overall methodology workflow.](figures/overall_new.png){#fig-overall_pipeline fig-align="center" width="50%"}
 
-To test robustness of spatial statistics under supervised conditions, three lattice geometries were considered - square, pentagonal (A5) and hexagonal (H3). Lattice geometry influences the number of average number of neigbours per observation. All three geometries were generated in three different dataset sizes - $n=25$ (5×5 grid), $n=100$ (10×10 grid), and $n=400$ (20×20 grid).
+The analysis focuses on robustness to topology corruption across two families of spatial statistics: spatial autocorrelation and regionalization. Both are evaluated on synthetic and real datasets (see @sec-syn and @sec-real).
+
+True Rook contiguity graph $W$ is then derived from each GeoDataFrame, from both synthetic and real data, using `libpysal.graph.Graph.build_contiguity()`. This matrix is subsequently corrupted by removing edges to simulate topological inconsistencies, so that contiguity between certain polygons is no longer detected. The corruption procedure is detailed in @sec-corruption.
+
+The relevant statistic is then computed once using the true $W$, which serves as the ground truth, and on a set of corrupted $W'$, representing the corrupted results. The outcomes are compared and evaluated, as described in @sec-eval.
+
+## Synthetic data {#sec-syn}
+
+For the synthetic datasets, a regular lattice geometry is first generated (see @sec-grid) and stored in a geopandas GeoDataFrame. Attribute values are then simulated separately for the autocorrelation and regionalization tests, as described in @sec-sac_sar and @sec-reg_syn, respectively. The graph corruption process on synthetic lattices is described in @sec-corruption.
+
+### Lattice generation {#sec-grid}
+
+To test robustness of spatial statistics under supervised conditions, three lattice geometries were considered - square, pentagonal (A5) and hexagonal (H3). Lattice geometry influences the number of average number of neigbours per observation. All three geometries were generated in three different dataset sizes - $n=25$ (5×5 grid), $n=100$ (10×10 grid), and $n=400$ (20×20 grid). For regionalization testing, $n=25$ was excluded.
 
 ![Simulated data spatial configurations.](figures/structures.png){#fig-structures fig-align="center" width="60%"}
 
-## Synthetic region delineation
+The nine distinct grids primarily serve to check whether topology corruption affects datasets of different sizes and average numbers of neighbours. The cardinalities of each synthetic lattice can be found in @fig-cardinalities.
 
-Regions were predefined on all three geometries at two dataset sizes: $n=100$ and $n=400$, giving six spatial configurations in total. For each spatial configuration, five polygons were randomly selected as seeds, which grow into spatially connected regions, folowing the procedure of @guo2023. The process was repeated 10 times per configuration, producing 10 distinct zonations. The minimum region size was set to 12 polygons for $n = 100$ and 48 polygons for $n = 400$. These zonations are utilized in contiguity corruption parametrization and they provide the basis for generating synthetic attribute data for the regionalization experiment.
+![Cardinalities of synthetic lattices.](figures/cardinalities.png){#fig-cardinalities fig-align="center" width="80%"}
 
-## Contiguity corruption
+### Simulated attribute data
 
-To simulate the effect of topological errors on spatial analysis, a controlled procedure for corrupting the Rook contiguity spatial weights matrix $W$ was developed. Starting from a topologically valid graph, edges (i.e., adjacency relationships between polygons) are iteratively removed to progressively degrade the spatial neighbourhood structure. Missing adjacencies are distributed spatially according to three distinct patterns:
+Synthetic attribute values were simulated separately for the spatial autocorrelation and regionalization experiments and are decribed in the following subsectinos.
 
--   **Randomly:** Edges are removed uniformly at random across the entire graph, representing spatially unpatterned errors with no particular spatial structure.
--   **Region borders:** Only edges crossing the boundary between two predefined regions can be removed, simulating errors arising from the integration of independently digitised datasets.
--   **Local:** Edges within or immediately adjacent to a single predefined region are targeted, representing localised digitisation or editing errors.
+#### SAC {#sec-sac_sar}
 
-![Deletable edges (highlighted in red): random (left), region borders (center), local (right)](figures/cor_method.png){#fig-cor_method fig-align="center" width="80%"}
-
-Since spatial autocorrelation measures aren't explicitely defined for observations with no neighbours (isolates), their occurence has to be prevented while corrupting $W$. If at least one of two observations connected by an edge has a node degree of 1 (has only 1 neigbour), the edge is not eligible for removal. Similarly, regionalization algorithms require a single connected component, edges whose removal would disconnect the graph, referred to as bridges, cannot be removed.
-
--maximally corrupted graph no isolates/mst
-
-At each iteration, the set of removable edges is computed as the intersection of the method-eligible and constraint-eligible subgraphs. One edge is removed, the constraint set is recomputed, and the process repeats until no further deletions are possible. From this sequence, 19 graphs were selected to represent a linear progression of missing edges, culminating in the maximally corrupted graph. Each sequence is repeated 10 times, yielding 190 corrupted graphs per corruption method. For the region borders and local corruption methods, each of the 10 repetitions is paired with a distinct zonation.
-
-To avoid circularity in the regionalization evaluation, any corrupted graph derived from a given zonation is excluded from experiments if the input data were generated based on the same zonation.
-
-## Spatial autocorrelation workflow
-
-### Synthetic data
-
-Attribute values were generated through a pure spatial autoregressive (SAR) process, following the procedure in @floraxImpactsMisspecifiedSpatial1995:
+Attribute values were generated through a pure spatial autoregressive (SAR) process, commonly used to generate datasets with a controlled level of spatial autocorrelation for testing spatial data models, as in @floraxImpactsMisspecifiedSpatial1995 and @anselin1991, among others. The attribute values are given by:
 
 $$y=(I-\rho W)^{-1} \epsilon$$
 
-where $y$ is the resulting vector of generated attribute values, $I$ is a identity matrix, $\rho$ is the spatial autoregressive parameter, $W$ is row-standartized Rook contiguity spatial weight matrix derived from each spatial configuration and $\epsilon$ is random normal error vector. The parameter $\rho$ was varied from -0.9 to 0.9 in increments of 0.1, with 10 independent draws of $\epsilon$ per value of $\rho$. This produced 190 unique value datasets per spatial configuration representing a wide spectrum differently spatially autocorrelated datasets (see examples in @fig-sar_examples).
+where $y$ is the resulting vector of generated attribute values, $I$ is a identity matrix, $\rho$ is the spatial autoregressive parameter, $W$ is row-standartized Rook contiguity spatial weight matrix derived from each spatial configuration and $\epsilon$ is a vector of independent and identically distributed (i. d. d.) errors drawn from a standard normal distribution, $\epsilon_i \sim \mathcal{N}(0,1)$. The parameter $\rho$ was varied from -0.9 to 0.9 in increments of 0.1, with 10 independent draws of $\epsilon$ per value of $\rho$. This produced 190 unique value datasets per spatial configuration representing a wide spectrum differently spatially autocorrelated datasets (see examples in @fig-sar_examples).
 
 ![Examples of generated SAR data.](figures/moran_extremes.png){#fig-sar_examples fig-align="center" width="80%"}
 
-### Real data
+#### Regionalization {#sec-reg_syn}
 
--us election counties (3k)
+Synthetic attribute data were simulated on synthetic lattices (only sizes 100 and 400) as n=25 is excluded. First, regions were predefined on the synthtic lattice by randomly selecting 5 seeds, which grow into 5 spatially connected regions, following the procedure of @guo2023, implementing their algorithm available at [https://github.com/Nithouson/regreg](#0){.uri}. The process was repeated 10 times per configuration, producing 10 distinct zonations. The minimum region size was set to 12 polygons for $n = 100$ and 48 polygons for $n = 400$. Alongside providing the basis for generating synthetic attribute data for the regionalization experiment, zonations are utilized in contiguity corruption parametrization (see @sec-corruption).
 
--guerry (85)
-
--sacramento1 (403)
-
-### Computation
-
-### Evaluation
-
-## Regionalization workflow
-
-### Synthetic data
-
-Tgenerated to exhibit strict stratified heterogeneity, meaning that true regression coefficients are constant within each predefined region but differ across regions. The underlying data-generating process follows a simple linear regression model used in @guo2023:
+True regression coefficients are constant within each predefined region but differ across regions. The underlying data-generating process follows a simple linear regression model used in @guo2023:
 
 $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \epsilon$$
 
 where $x_1, x_2 \sim \mathcal{U}[0, 1)$ are independent covariates drawn i.i.d. from a uniform distribution, $\epsilon \sim \mathcal{N}(0, \sigma^2)$ is a random error term with $\sigma = 0.1$, and $\beta_0$, $\beta_1$, $\beta_2$ are region-specific regression coefficients. Within each of the five predefined regions, $\beta_1$ and $\beta_2$ take distinct values drawn from $\{-2, -1, 0, 1, 2\}$, while $\beta_0 = 0$ in all regions.
 
+fig-examples
+
 For each zonation, five independent sets of attribute values were generated following this process and subsequently used as input to the regionalization algorithms.
 
-### Real data
+### Contiguity corruption {#sec-corruption}
 
--ceara zika (184)
+To simulate the effect of topological errors on spatial analysis, a controlled procedure for corrupting the Rook contiguity spatial weights matrix $W$ was developed. Starting from a topologically valid graph, edges (i.e., adjacency relationships between polygons) are iteratively removed one by one to progressively degrade the spatial neighbourhood structure. Missing adjacencies are distributed spatially according to three distinct patterns:
 
--chicago airbnb (77)
+-   **Randomly:** Edges are removed uniformly at random across the entire graph, representing spatially unpatterned errors with no particular spatial structure. Done on all 9 lattices.
+-   **Region borders:** Only edges crossing the boundary between two predefined regions can be removed, simulating errors arising from the integration of independently digitised datasets. Applied to all lattice shapes for $n = 100$ and $n = 400$.
+-   **Local:** Edges within or immediately adjacent to a single predefined region are targeted, representing localised digitisation or editing errors. Applied to all lattice shapes for $n = 100$ and $n = 400$.
 
--south (1k+)
+Depending on the chosen pattern, the edges that qualify for removal are referred to as method-eligible edges (see @fig-cor_method). Edge removal is also restricted by conditions of $W$ for the relevant statistic, explained in the following subchapters.
 
-### Computation
+![Method-eligible removable edges (highlighted in red): random (left), region borders (center), local (right).](figures/cor_method.png){#fig-cor_method fig-align="center" width="80%"}
 
-### Evaluation
+Each removal sequence is done 10 times. For the region borders and local corruption methods, each of the 10 sequences is paired with a distinct zonation, while for local removal, a random region is always selected from a given zonation. These zonations are also used in generating attribute values for the regionalization experiment described in @sec-reg_syn. Beacuse of that, a corrupted $W'$ derived by targeting a given zonation's borders or a region within it is excluded from evaluation against attribute data generated from that same zonation during the regionalization experiment. This avoids testing a corrupted graph against the very partition that defined its own corruption.
 
--ARI
+#### Spatial autocorrelation {#sec-no_isolates}
 
--FN/FP counts?
+Spatial autocorrelation is only valid if $W$ has no isolated nodes (isolates), which do not have any neighbours. Therefore, an edge can be cannot be deleted if it would break this condition, i. e. the if one of the edge's endpoint has a node degree equal to one. At each iteration, the set of removable edges is computed as by subtracting the condition-breaking edges from the method-eligible. Next, one edge is removed and the corrupted graph is saved. Afterwards, the condition set is recomputed, and the process repeats until no further deletions are possible. The complete graph corruption sequence is shown in @fig-w_corruption.
+
+![Corruption of $W$ workflow.](figures/cor_new.png){#fig-w_corruption fig-align="center" width="50%"}
+
+#### Regionalization
+
+Regionalization algorithms require $W$ to consist of a single connected component. Edges whose removal would disconnect $W$, referred to as bridges, are condition-breaking, thereby they need to be subtracted from the method-eligible edges, analogically to the no isolates condition discussed above. The one component condition is stricter, keeping more more edges in $W'$, hence the maximally corrupted graph under this condition has more edges than under one isolates condition for the same lattice as shown in fig.
+
+![Examples of maximally corrupted $W'$ under a selected condition.](figures/graphs_conditions.png){#fig-g_conditions fig-align="center" width="66%"}
+
+### Final simulation {#sec-eval}
+
+#### Spatial autocorrelation
+
+For the primary analysis, 19 corrupted graphs were selected from each deletion sequence, spaced as evenly as the sequence length allows and always including both endpoints (the true graph and the maximally corrupted graph), giving 20 graphs per sequence including the true $W$. Some secondary analyses used different selections of corrupted graphs; these are specified where relevant in the Results.
+
+After generating the attribute data and the corrupted graphs, Global Moran's $I$ (@eq-global_i) is computed using `esda.moran.Moran().I`, alongside its simulated $p$-value based on 999 permutations via `esda.moran.Moran().p_sim`. `esda.moran.Moran()` takes the attribute vector and the corresponding true $W$ or corrupted $W'$ as input.
+
+Sensitivity is evaluated as the deviation of the corrupted estimate $I'$ from the true value $I$, that is $I' - I$, or its absolute value. The magnitude of the $p$-value itself is not evaluated directly; instead, each corrupted result is checked for whether it lost or gained statistical significance relative to the true result, using the significance threshold $\alpha = 0.05$.
+
+#### Regionalization
+
+Graphs were sampled using the same procedure described in the previous section on spatial autocorrelation and used for testing two regionalization methods: SCHC and SKATER (see @sec-schc and @sec-skater).
+
+SCHC was implemented using `spopt.region.WardSpatial()`, which applies Ward's linkage, and SKATER using `spopt.region.Skater()`. The number of clusters was set to five for both algorithms, matching the number of predefined regions used to generate the synthetic data. Both functions return a set of labels assigning each observation to a region.
+
+Ground truth for this comparison was not taken to be the original synthetic zonation itself, but rather the partition each algorithm produces when run on the true $W$ with a given attribute dataset. That is, for each of the five attribute datasets generated per zonation, SCHC and SKATER were each run once on the true $W$, and their respective outputs served as the reference partitions against which the same algorithm's output on the corrupted matrices $W'$ was subsequently compared. Consequently, SCHC and SKATER can yield different reference partitions for identical input data, since neither algorithm is guaranteed to exactly recover the generating zonation even in the absence of corruption.
+
+Agreement between the reference and corrupted-graph partitions was quantified using the Adjusted Rand Index (ARI) [@hubert1985], which compares two partitions while correcting for the agreement expected by chance:
+
+$$
+ARI = \frac{2(TP \cdot TN - FN \cdot FP)}{(TP+FN)(FN+TN) + (TP+FP)(FP+TN)}
+$$ {#eq-ari}
+
+where $TP$ is the number of observation pairs placed in the same cluster under both partitions, $TN$ the number placed in different clusters under both, and $FP$ and $FN$ the number of pairs on which the two partitions disagree, in either direction. The regionalization labels obtained under $W'$ were always compared against the corresponding algorithm's own reference partition, as defined above. ARI ranges from -0.5 to 1, where 1 means complete agreement (partitions are identical). Values below zero suggest that the resulting regionalization exhibits less agreement with the reference partitions than would be expected by pure chance.
+
+## Real data {#sec-real}
+
+For the real datasets, different data sources were used for the autocorrelation and regionalization experiments. These datasets primarily serve to verify the findings obtained from the synthetic data. The graph corruption procedure is identical to the one applied to the synthetic data, described in @sec-corruption. Attribute values were not simulated but correspond to genuine observed statistics.
+
+### SAC {#sec-real_sac}
+
+To assess the vulnerability of global Moran's $I$ on real data, three datasets of varying size, initial $I$, and cardinality were used (see \@tbl-real-sac-datasets). The Guerry and Sacramento datasets were imported from the `geodatasets` library [@geodatasets] and the elections dataset from `libpysal` @rey2022PySAL. The basic information is in table x and each of them is further described in this chapter.
+
++------------+----------+---------------+------------+----------------------------------+
+| name       | size     | variable used | $I_{true}$ | average cardinality              |
++============+==========+===============+============+==================================+
+| Guerry     | 85       | Donatns       | 0.35       | 4.94                             |
++------------+----------+---------------+------------+----------------------------------+
+| Sacramento | 403      | HH_INC        | 0.56       | 5.28                             |
++------------+----------+---------------+------------+----------------------------------+
+| Elections  | 3105     | pct_dem_12    | 0.62       | 5.63 (nejdou mi tagovat tabulky) |
++------------+----------+---------------+------------+----------------------------------+
+
+The Guerry dataset, the smallest of the three, is a classical study mapping "moral statistics" across the departments of France in the 1830s. The variable selected for computing $I$ is "Donatns", representing charitable donations per capita [@anselin2020lisa] (see @fig-guerry_overview (a)). With $I_{true}=0.35$, "Donatns", is the least spatially autocorrelated of the three. Cardinalities of Guerry's $W$ are shown in @fig-guerry_overview (b).
+
+![Guerry dataset overview. (a) Choropleth of charitable donations per capita "Donants" by department and regions of France. (b) Distribution of Rook contiguity cardinalities.](figures/guerry_overview.png){#fig-guerry_overview fig-align="center"}
+
+Guerry's five-region "Region" column (@fig-guerry_overview (a)) parametrizes its region-border and local edge removal. Random and border removal were each run ten times, analogously to the synthetic protocol. Local removal, however, followed a different procedure from the one used on the synthetic lattices: each of the five regions was targeted twice, yielding ten sequences in total.
+
+The Sacramento dataset represents 2000 employment and demographic statistics per census tract. The target variable is "HH_INC", representing median household income in 1999, visualized in @fig-sacramento_overview. The cardinality distribution of the Sacramento $W$ is shown in @fig-sacramento_overview (b).
+
+![Sacramento dataset overview. (a) Choropleth of median household income "HH_INC" by census tract. (b) Distribution of Rook contiguity cardinalities.](images/sacramento_overview.png){#fig-sacramento_overview}
+
+The largest dataset, with over 3000 observations, is the Elections dataset, which shows the results of the 2012 and 2016 US presidential elections by county (continental United States, excluding Hawaii and Alaska). The chosen variable is "pct_dem_12", representing the Democratic vote share in 2012 (@fig-usa_overview (a)). Norfolk County (MA), Franklin County (OH), and Hancock County (WV) are islands and do not neighbour any other county; these were removed from the dataset prior to constructing $W$, leaving $n = 3105$.
+
+![Elections dataset overview. (a) Choropleth of democratic vote share "pct_dem_12" by census tract. (b) Distribution of Rook contiguity cardinalities.](figures/elections_overview.png){#fig-usa_overview fig-align="center"}
+
+### Regionalization
+
+Regionalization expereiment was also performed on 3 reaal datastes: Chicago, Ceara Zika and South, all imported trough geodatasets.
+
++------------+--------+-----------------------------------------------------------------------------------------------------+---------------------+
+| name       | size   | variables                                                                                           | average cardinality |
++============+========+=====================================================================================================+=====================+
+| Chicago    | 77     | poverty, crowded, dependency, without_hs, unemployed, income_pc, harship_in, perc_crime, perc_theft | 4.65                |
++------------+--------+-----------------------------------------------------------------------------------------------------+---------------------+
+| Ceara Zika | 184    | mobility, environ, housing, sanitation, infra                                                       | 5.09                |
++------------+--------+-----------------------------------------------------------------------------------------------------+---------------------+
+| South      | 1412   | HR90, UE90, DV90, FP89, BLK90                                                                       | 5.45                |
++------------+--------+-----------------------------------------------------------------------------------------------------+---------------------+
+
+: Real datasets used for regionalization {#tbl-reg_datasets}
+
+The Chicago dataset is frequently used as a showcase example in spatial data analysis, combining Airbnb listings with socioeconomic and crime statistics by community area. Nine variables were selected for the analysis, listed in @tbl-real-reg-datasets.
+
+The Ceará Zika dataset maps Zika and microcephaly infections alongside socioeconomic variables across municipalities in the state of Ceará, Brazil. The five selected variables are listed in \@tbl-real-reg-datasets.
+
+The South dataset contains homicide statistics and socioeconomic characteristics for counties in the southern United States. The five selected variables are listed in \@tbl-real-reg-datasets. The South dataset's region-border and local corruption were parametrized using its "STATE_FIPS" column. For local removal, each of the 17 states was selected once per sequence.
+
+-tady by asi mely byt mapicky vsech(?) varibles
 
 # Results
 
 ## Spatial autocorrelation
 
-tolik a tolik vypoctu bylo performed
-
 ### Synthetic data
 
-To get an overview of how size, average number of neigbours and initial spatial autocorrelation influences the deviations of $I$ and its significance under graph corruption, random edge removal was considered. For each lattice type and size, 20 graphs were considered, including the true graph (ground truth) and the most corrupted possible graph for each spatial configuration, those in between represent linear progression of missing edges.
+#### Moran's I
 
-The kernel density plot (@fig-kdeplot) demonstrates that deviation from true Moran's I is symmetrical and normally distributed, indicating roughly equal occurrence of positive and negative deviations. Therefore from now on, we can work only with absolute deviation as it doesnt influence..
+The kernel density plot (@fig-kdeplot) shows that deviations from the true Moran's I are symmetric around zero across all three ranges of true $I$, with roughly equal numbers of positive and negative deviations. Since deviations aren't systematically biased in one direction, the sign carries no additional information. From this point on, we therefore work with the absolute deviation, without loss of relevant information.
 
-![Kernel density plot of deviations from true Moran's I.](figures/moran_deviation_kde_combined.png){#fig-kdeplot fig-align="center" width="60%"}
+![Kernel density plot of deviations from true Moran's I. Flitered to random edge removal.](figures/moran_deviation_kde_combined.png){#fig-kdeplot fig-align="center" width="60%"}
 
 Dataset size exerts the clearest influence on absolute deviation, with larger datasets demonstrating markably greater resilience to topology corruption (see @fig-shape_size_comapairson). For $n=400$, maximum deviation slightly exceeds 0.2, even under the most severe corruption levels examined (70-80% edges missing), whereas for $n=25$ it can reach up to 0.5 and even over 0.7 in the most extreme cases, which can critically mislead interpretation of the estimated spatial autocorrelation.
 
@@ -493,68 +573,116 @@ Dataset size exerts the clearest influence on absolute deviation, with larger da
 
 Across all bins, the 75th percentile does not exceed 0.07 absolute deviation, indicating that typical estimation error remains small even under substantial topology corruption. However, the occurrence of larger deviations in the upper tail indicates that isolated cases of substantial deviation remain possible and should not be dismissed when performing spatial autocorrelation analysis.
 
-![Edge removal method compaoirson.](figures/method_compairson.png){#fig-global_method_compairson fig-align="center"}
+Results were also compared based on the removal method. Across all spatial structures, global Moran's I deviated the most under local edge removal, while border removal performed comparably to random edge removal at the same level of corruption. However, even the 95th percentile only slightly exceeds 0.1 in the most corrupted local-removal case (hexagonal lattice, $n = 100$) partly because the maximum percentage of removed edges is only 20–30% under this method. Nonetheless, absolute deviations of global Moran's $I$ remain small in absolute terms, suggesting the statistic is comparatively robust to targeted corruption even though local removal consistently produces the largest deviations among the three methods tested.
 
-@fig-p-scatter presents a scatterplot of true Moran's I values against their corrupted counterparts across different levels of graph corruption, demonstrated on hexagonal lattice of size 100. It confirms the symmetry of deviations observed in @fig-kdeplot and indicates that datasets exhibiting no significant spatial pattern are more vulnerable to misclassification.
+![Edge removal method compaoirson.](figures/moran_deviation_methods.png){#fig-global_method_compairson fig-align="center"}
 
-![Scatterplots of true vs. calculated Moran's $I$ under graph corruption, by percentage of missing edges. Filtered to $n=100$, hexagonal lattice, random edge removal.](figures/p_values4.png){#fig-p_scatter fig-align="center" width="66%"}
+#### Statistical significance
+
+@fig-p_scatter presents a scatterplot of true Moran's I values against their corrupted counterparts across different levels of graph corruption, demonstrated on hexagonal lattice of size 100. It confirms the symmetry of deviations observed in @fig-kdeplot and indicates that datasets exhibiting no significant spatial pattern are more vulnerable to misclassification.
 
 @fig-p_scatter also illustrates how significance status changes relative to the critical value at $\alpha =0.05$. Specifically, it shows that whether a dataset is misclassified is not directly determined by the degree of corruption itself, but rather by whether the corrupted value crosses a critical threshold.
 
-The false non-significance rate increases with corruption level, as illustrated in @fig-miss_sig (right), since more extensive edge removal raises the probability that a given estimate will cross the significance threshold. The magnitude of this rate also reflects dataset size: larger datasets are more stable, and therefore less vulnerable to misclassification. Conversely, average cardinality does not correspond to greater robustness the way it does for $I$ values. Although $I$ deviates more strongly under corruption when cardinality is lower, lattices with lower average cardinality (e.g., square) show lower misclassification rates in @fig-miss_sig (right), while those with higher average cardinality (e.g., hexagonal) show higher rates.
+![Scatterplots of true vs. calculated Moran's $I$ under graph corruption, by percentage of missing edges. Filtered to $n=100$, hexagonal lattice, random edge removal.](figures/p_values4.png){#fig-p_scatter fig-align="center" width="100%"}
 
-The rate of false significance (@fig-miss_sig, left) is considerably lower than that of false non-significance. It increases up to approximately 15–20% missing edges across all lattice types and dataset sizes, after which it plateaus and fluctuates around a rate of 8%, with no apparent influence from dataset size or cardinality.
+The false non-significance rate increases with corruption level, as illustrated in @fig-miss_sig (right), since more extensive edge removal raises the probability that a given estimate will cross the significance threshold. The magnitude of this rate also reflects dataset size: larger datasets are more stable, and therefore less vulnerable to misclassification. Interestingly, average cardinality does not correspond to greater robustness the way it does for $I$ values. Although $I$ deviates more strongly under corruption when cardinality is lower, lattices with lower average cardinality (e.g., square) show lower misclassification rates in @fig-miss_sig (right), while those with higher average cardinality (e.g., hexagonal) show higher rates.
+
+The rate of false significance (@fig-miss_sig, left) is considerably lower than that of false non-significance. It increases up to approximately 15–20% missing edges across all lattice types and dataset sizes, after which it stabilizes and fluctuates around a rate of 8%, with no apparent influence from dataset size or cardinality.
 
 ![Missclassified statistical significance of Global Moran's $I$. Filtered to random edge removal.](figures/p_values_two_panels_by_error_type.png){#fig-miss_sig fig-align="center" width="100%"}
 
-The critical $I$ values that set the significance threshold can be estimated analytically using the moments derived by Cliff and Ord (1981). Under the randomization assumption, the expectation and variance of $I$ are:
+The occurrence of significance loss and gain as a function of $I_{true}$ is illustrated in @fig-sig_hist. Significance loss increases as $I_{true}$ moves inward from extreme values toward the critical $I$ value, at which point the observation can no longer sustain significance. Significance gain, conversely, increases as $I_{true}$ moves outward from zero toward larger absolute values, culminating at approximately the same point at which significance loss culminates - the critical $I$ value. Datasets whose $I_{true}$ lies close to the critical value are therefore the most vulnerable to significance misinterpretation.
 
-$$E[I] = -\frac{1}{n-1}$$
+The width of the non-significance interval is primarily determined by sample size, with larger datasets narrowing this interval substantially. Connectivity exerts a similar but visibly weaker effect, with denser lattices yielding critical values closer to zero. The critical values can be estimated analytically from the moments of $I$ established by Cliff and Ord (1981) and will be examined in further detail in the Discussion.
 
-$$\text{Var}(I) = \frac{n\left[(n^2-3n+3)S_1 - nS_2 + 3S_0^2\right] - b_2\left[(n^2-n)S_1 - 2nS_2 + 6S_0^2\right]}{(n-1)(n-2)(n-3)S_0^2} - E[I]^2$$
-
-where $S_0 = \sum_{i}\sum_{j} w_{ij}$ is the total weight mass, $S_1 = \frac{1}{2}\sum_i\sum_j(w_{ij}+w_{ji})^2$ and $S_2 = \sum_i\left(\sum_j w_{ij} + \sum_j w_{ji}\right)^2$ are weight statistics capturing the structure of $W$, and $b_2$ is the kurtosis of the data. Critically, $S_0$, $S_1$, and $S_2$ depend on the structure of $W$, so the threshold is fully determined by $W$'s connectivity pattern together with one data-dependent scalar, $b_2$. The critical values follow directly by inverting the test statistic:
-
-$$I_{crit} = E[I] \pm z_\alpha\sqrt{\text{Var}(I)}$$
-
-As edges are removed, $S_1$ and $S_2$ shift in a way that increases $\text{Var}(I)$, pushing $I'_{crit}$ further from zero - sparser weight matrices produce a wider, harder-to-clear significance band (Bivand, Müller, and Reder 2009; Cliff and Ord 1981). This means graph corruption has two distinct effects: it perturbs the calculated $I'$ away from its true value, and it independently shifts the critical threshold itself.
-
-Significance loss occurs when \$\|I\| \> \|I\_{crit}\|\$ and \$\|I'\| \< \|I'\_{crit}\|\$. As corruption increases, \$\|I'\_{crit}\|\$ grows, causing a larger share of computed values \$I'\$ to fall within the widened non-significant interval. Notably, even where \$I'\$ moves away from zero, \$I'\_{crit}\$ may still exceed it, since the threshold shifts independently of the realized value of \$I'\$.
-
-This mechanism operates in the opposite direction for significance gain, which occurs when \$\|I\| \< \|I\_{crit}\|\$ and \$\|I'\| \> \|I'\_{crit}\|\$. If \$I'\$ moves toward zero under corruption, the observation necessarily remains non-significant. If \$I'\$ moves away from zero, it may in principle exceed the threshold; however, this outcome is comparatively rare, as \$I'\_{crit}\$ is simultaneously shifting in the same direction. This asymmetry explains why significance gain occurs substantially less frequently than significance loss.
-
-The occurence of significance loss and gain is illustrated in @fig-sig_hist.
-
-![Significance misclassification rate per size. Data filtered to random edge removal.](figures/moran_falsesig_falsenonsig_rate_by_size_3panel.png){#fig-sig_hist fig-align="center"}
+![Significance misclassification rate per size. Data filtered to random edge removal.](figures/moran_falsesig_falsenonsig_rate_by_size_shape_9panel.png){#fig-sig_hist fig-align="center"}
 
 ### Real data
 
-The deviations of $I$ for real datasets
+The deviations of $I$ for real datasets shown in @fig-sac_real are consistent with the results obtained from synthetic data. The elections dataset exhibits strong robustness to corruption, with a maximum absolute deviation of 0.024 in the most corrupted case. This can be attributed both to a high positive $I_{true} = 0.62$ and to the dataset's large size ($n = 3108$). The Sacramento dataset shows greater vulnerability than the elections dataset: despite a similar true spatial autocorrelation ($I_{true} = 0.56$), this dataset is nearly eight times smaller ($n = 403$) , which is the primary driver of its increased vulnerability. However, the maximum deviation reaches only +0.11, which, given the magnitude of $I_{true}$, does not lead to a misleading conclusion.
 
-![Moran's I deviation on real data under graph corruption (upper left, upper right, lower left) and $p$-value change of Guerry dataset (lower right). Each run is plotted separately. Data filtered to random edge removal.](figures/sac_real_overview.png){#fig-sac_real fig-align="center" width="66%"}
+![Moran's I deviation on real data under graph corruption plotted by independent runs (upper left, upper right, lower left) and $p$-value change of Guerry dataset (lower right). Each run is plotted separately. Data filtered to random edge removal.](figures/sac_real_overview.png){#fig-sac_real fig-align="center" width="100%"}
 
--local a boders rmoval nezaslouzi plot, protoze max deviation je tam tak 0.003. zaslouzi si max tak odstavec
+The Guerry dataset, with a relatively small $n = 85$ and weaker true positive spatial autocorrelation ($I_{true} = 0.35$), is considerably more fragile. In the most corrupted case, $I_{corrupt} = 0.18$, a deviation large enough to produce misleading conclusions about the underlying data. This is also the only case in which significance was lost at $\alpha = 0.05$, visualized in @fig-sac_real by the light blue line, alongside several other runs (grey, yellow, and orange lines) in which $I$ moves toward zero and approaches the significance threshold. This illustrates how a shift of $I$ toward zero can result in significance loss.
+
+Across all real datasets, most notably for Sacramento and Guerry, @fig-sac_real shows that within the independent runs, the deviation does not grow linearly with the proportion of missing edges. Instead, it fluctuates: each run follows a distinct trajectory and in some cases additional missing edges partially cancel out prior deviation, causing the deviation to decrease even as corruption increases. This indicates that the resulting deviation is not solely a function of the amount of missing edges, but also depends on which specific edges are removed.
+
+@fig-menhod_comparson_guerry shows that border removal sustained global Moran's I the best, with the 95th percentile not exceeding an absolute deviation of 0.025. In @fig-guerry_detail, we can see the independent runs converge onto two specific values, meaning that under maximum corruption, only two distinct graphs were generated.
+
+![Compairson of edge removal methods on Guerry dataset. Mean is represented by full line, 95th percentile by dashed line.](figures/guerry_moran_deviation.png){#fig-menhod_comparson_guerry fig-align="center" width="66%"}
+
+Unlike the results for synthetic data, the mean deviation of *I* for the Guerry dataset under local removal does not show greater vulnerability than under random removal. However, at the same level of corruption as random removal, it does produce higher extreme values. This is shown in @fig-guerry_detail (deviation shown after removal edge by edge), where corruption of the West region (W) is responsible for the extreme case, reaching a deviation of approximately 0.1 after deleting 17% of edges, a level of deviation that random edge removal only reaches after deleting nearly 50% of edges.
+
+![Comparison of deviations of global Moran's I under different methods of edge removals on Guerry dataset.](figures/guerry_moran_deviation_detail.png){#fig-guerry_detail}
 
 ## Regionalization
 
+### Synthetic data
+
+Overall, SCHC shows greater robustness to graph corruption than SKATER. This is most visible in @fig-reg_boxplots for the hexagonal and pentagonal lattices of $n=400$, where SCHC's median ARI is noticeably higher across most of the corruption intensities. As more edges are removed, however, this gap narrows. At the highest levels of corruption the two methods converge, and in some configurations SKATER's median ARI slightly exceeds SCHC's.
+
+SKATER's ARI distribution tends to be wider, with more extreme outliers, than SCHC's. This is most apparent for the pentagonal lattice with of $n=100$: even with minimal corruption (up to 5% edges missing), a subset of runs reach ARI values as low as approximately 0.35, and at the highest corruption level a number of runs return ARI values slightly below zero.
+
+It is also worth noting the threshold beyond which perfect regionalization was no longer sustained, even in the best-case scenario. Both algorithms, across all lattice structures, were able to maintain a 100% correct partition up to approximately 15% missing edges; the square lattice of $n=100$ maintained this even up to 20%. Beyond this point, SKATER began producing slightly imperfect results (ARI around 0.95) between 15% and 20% missing edges, with the exception of the pentagonal lattice with $n=100$, where SCHC was the first to degrade instead. Under maximum corruption, the best-case ARI across configurations was approximately 0.7, with the exception of the square lattice with 100 units, which dropped below 0.6.
+
 ![Boxplots of computed ARI between ground truth and regionalization techniques under graph corruption. Data filtered to random edge removal.](figures/reg_boxplots.png){#fig-reg_boxplots fig-align="center"}
 
-![](figures/reg_real_examples.png)
+@fig-reg_line_plot offers a clearer comparison across the six spatial configurations for each method. The square lattice of $n=100$ performed worst overall, with one notable exception: under SKATER, it initially degraded more slowly than the other configurations, before dropping sharply below all other configurations as corruption continued. Under SKATER, both pentagonal lattices underperformed their hexagonal counterparts throughout the corruption range. Under SCHC, however, the pentagonal lattice with 400 units slightly outperformed the hexagonal lattice with 100 units up to roughly 40% missing edges. Across both methods, the rate of decline slows markedly toward the higher end of the corruption, minimum mean ARI across all six configurations and both methods falls within a narrow band of 0.33–0.39.
 
-![Method of edge removal compairson on regionalization techniques. Binned by 1% of missing edges.](figures/reg_method_compairson_binned1.png){#fig-reg_nevim fig-align="center" width="66%"}
+![Line plots comparing spatial configurations for each regionalization method.](figures/reg_lineplot_faceted.png){#fig-reg_line_plot fig-align="center"}
+
+Compared with random edge removal, both targeted removal methods, border and local, resulted in substantially worse ARI degradation across all spatial layouts, for both algorithms. At low levels of corruption, the three removal methods perform similarly, with only small differences between them. As corruption increases, however, random removal degrades noticeably more slowly than either targeted method. For example, in the square lattice of $n=400$, both algorithms already drop to a mean ARI of around 0.4 by 15–20% missing edges under border removal, whereas random removal does not reach this level of degradation until approximately 45–50% missing edges, maintaining a mean ARI of roughly 0.85–0.9 at the same 15–20% missing level. Regionalization algorithms under local removal generally performed better or comparably to border removal at a given level of corruption.
+
+![Method of edge removal compairson on regionalization techniques.](figures/reg_lineplot_by_method.png){#fig-reg_nevim fig-align="center" width="100%"}
+
+### Real data
+
+Interestingly, the regionalization performed on real data does not follow the same degraadtion pattern as the synthetic data. SCHC, which performed better across all synthetic configurations, is here comparable to or worse than SKATER. This is most visible for the Ceará Zika dataset in @fig-reg_real_all, where SCHC's mean ARI drops rapidly to approximately 0.55 at 5–10% missing edges, and falls further to around 0.3 by 25% missing edges. A similar early drop appears for both algorithms in the South dataset, most notably for SCHC, whose mean ARI already falls to approximately 5% below its starting value within the first 5% of removed edges, in contrast to the synthetic data, which remained comparatively stable at low corruption levels.
 
 ![Average ARI on real data.](figures/reg_real_all.png){#fig-reg_real_all fig-align="center"}
 
+To showcase the specific impact of per-edge removal, regionalization was performed on graphs with edges removed one by one, up to 50 missing edges. Specific runs were selected and plotted in @fig-reg_examples. The results show that degradation is not gradual, but instead occurs in discrete jumps: removing a single additional edge can shift the resulting ARI substantially. For example, removing just two edges from the Chicago dataset caused SCHC's ARI to fall sharply to 0.55. The resulting corrupted regionalization is shown in @fig-reg_chciago.
+
+Another example is the Ceará Zika dataset, where SCHC regionalization ARI collapsed from a perfect score (ARI = 1) to 0.29 after the removal of 16 edges, producing a markedly different regionalization outcome (see @fig-reg_zika). Interestingly, as corruption continued, the regionalization recovered almost completely: after the removal of the 20th edge, ARI rose back up to 0.98.
+
+SKATER regionalization for South shifted noticeably after the loss of only a single edge, with ARI dropping to 0.83, demonstrating that even a minor topological inconsistency can substantially alter the outcome of the statistic (see @fig-reg_south).
+
 ![ARI example runs.](figures/reg_real_examples.png){#fig-reg_examples fig-align="center"}
 
-![Example](figures/reg_ceara_zika_map.png){#fig-reg_zika}
+![Example of Chicago dataset SCHC regionalization under graph corruption.](figures/reg_chicago_map.png){#fig-reg_chciago fig-align="center"}
 
-![](figures/reg_chicago_map.png)
+![Example of Ceara Zika dataset SCHC regionalization under graph corruption.](figures/reg_ceara_zika_map.png){#fig-reg_zika}
 
-![](figures/reg_south_map.png)
+![Example of South dataset SKATER regionalization under graph corruption.](figures/reg_south_map.png){#fig-reg_south}
 
--skater je vic sensitive u synthetic dat, ale u real je to dost random
+On the South dataset, edge removal methods were compared (see @fig-south_method) by computing the mean ARI within 1% wide bins. To ensure comparability across methods, the maximally corrupted graph under random edge removal was standardized to 500 missing edges, which corresponds to roughly 13 % missing edges . Borders removal yielded the poorest performance across both clustering algorithms, consistent with the results observed on the synthetic datasets. This pattern does not hold for local removal, however, which performs comparably to regionalization accuracy under random edge removal. The pronounced peak observed at the 9–10% interval is likely attributable to edge deletions concentrated within a specific region, where a greater number of edges were eligible for removal; this bin should therefore be interpreted with caution given its correspondingly small sample size.
 
--borders seem to delat vetsi mess
+![Edge removal methods compared on South dataset.](figures/south_extra_lineplot_by_method.png){#fig-south_method fig-align="center" width="75%"}
 
 # Discussion
+
+-jak je mozny ze je deviation symetricka? pri densyfying to jde k nule, nemelo by to jit vic do extremu?
+
+\- critical values a ten mechanismus, see below
+
+The critical $I$ values that set the significance threshold can be estimated analytically using the moments derived by Cliff and Ord (1981), namely expected value $E[I]$ and variance $Var(I)$. Under the randomization assumption, the expectation and variance. Critically, $Var(I)$ depends on the structure of $W$, so the threshold is fully determined by $W$'s connectivity pattern together with one data-dependent scalar, curtosis $b_2$. The critical values follow directly by inverting the test statistic:
+
+$$I_{crit} = E[I] \pm z_\alpha\sqrt{\text{Var}(I)}$$
+
+As edges are removed, $I'_{crit}$ is pushed further from zero - sparser weight matrices produce a wider, harder-to-clear significance band <!--(Bivand, Müller, and Reder 2009; Cliff and Ord 1981)-->. This means graph corruption has two distinct effects: it perturbs the calculated $I'$ away from its true value, and it independently shifts the critical threshold itself.
+
+Significance loss occurs when $|I| > |I_{crit}|$ and $|I'| < |I'_{crit}|$. As corruption increases, $|I'_{crit}|$ grows, causing a larger share of computed values $I'$ to fall within the widened non-significant interval. Notably, even where $I'$ moves away from zero, $I'_{crit}$ may still exceed it, since the threshold shifts independently of the realized value of $I'$.
+
+This mechanism operates in the opposite direction for significance gain, which occurs when $|I| < |I_{crit}|$ and $|I'| > |I'_{crit}|$. If $I'$ moves toward zero under corruption, the observation necessarily remains non-significant. If $I'$ moves away from zero, it may in principle exceed the threshold; however, this outcome is comparatively rare, as $I'_{crit}$ is simultaneously shifting in the same direction. This asymmetry explains why significance gain occurs substantially less frequently than significance loss.
+
+-na local removal citlivejsi asi protoze matrix heterogenenity a neco s tim S1, S2?
+
+-porvnani real a synthtic dat, zduraznit, ze pravidelny lattices maji sva omezeni (nacaty v backgorundu)
+
+-brutalni citlivost regionalizace, especially u real dat, je to hard to predict, a jelikoz jsou to oba greedy algoritmy, tak jakmile se to jednou posere, neni cesty zpet
+
+-logicky asi se regionalizace posere, kdyz odebereme edge, ktera by v nejaky kroku mela nejvetsi/nejmensi distance mezi clustery a v pripade skateru mst
+
+-efekt na regionalizaci je obyvlast understudied, jelikoz contiguty weights jsou jedina spravna volba
+
+-morans i se meni relatively smoothly, ale regionalizace se odhaduje dost blbe.. kazdej odebranej edge s moranem neco udela, ale u regionalizace muze a nemusi,
